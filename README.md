@@ -1,2 +1,2 @@
 # dtor
-Torch-based feature extraction
+Torch-based training stack
