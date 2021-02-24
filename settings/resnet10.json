@@ -1,0 +1,13 @@
+{
+  "model": "resnet",
+  "input_W": 64,
+  "input_H": 64,
+  "input_D": 48,
+  "model_depth": 10,
+  "n_seg_classes": 2,
+  "resnet_shortcut": "B",
+  "phase": "train",
+  "no_cuda": "",
+  "pretrain_path": "/DATA/sb/LTP/pretrain/resnet_10.pth",
+  "new_layer_names": ["conv_seg"]
+}
