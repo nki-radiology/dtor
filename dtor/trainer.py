@@ -20,7 +20,6 @@ import torch.nn as nn
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-import torchio as tio
 import torchvision.models as tv_models
 
 from dtor.loss.diceloss import DiceLoss
