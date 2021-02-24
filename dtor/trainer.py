@@ -20,6 +20,7 @@ import torch.nn as nn
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
+import torchio as tio
 import torchvision.models as tv_models
 
 from dtor.loss.diceloss import DiceLoss
@@ -42,7 +43,7 @@ METRICS_LOSS_NDX = 2
 METRICS_SIZE = 3
 
 
-class Trainer:
+class TrainerBase:
     def __init__(self, sys_argv=None):
         if sys_argv is None:
             sys_argv = sys.argv[1:]
@@ -78,21 +79,10 @@ class Trainer:
             torch.backends.cudnn.benchmark = False
 
     def init_model(self):
-        model = model_choice(self.cli_args.model)
-        if self.use_cuda:
-            log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
-            if torch.cuda.device_count() > 1:
-                model = nn.DataParallel(model)
-            model = model.to(self.device)
-        return model
+        return NotImplementedError
 
     def init_data(self, fold):
-        aug = False
-        if self.cli_args.augments > 0:
-            aug = True
-        train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug)
-        train_dl, val_dl = self.init_loaders(train_ds, val_ds)
-        return train_ds, val_ds, train_dl, val_dl
+        return NotImplementedError
 
     def init_optimizer(self):
         return Adam(self.model.parameters(), lr=0.0001)
@@ -187,7 +177,7 @@ class Trainer:
 
         # Save CLI args
         cli_name = f'results/model-{self.cli_args.tb_prefix}-{time.strftime("%Y%m%d-%H%M%S")}.json'
-        with open(cli_name, 'w') as f:
+        with open('rescommandline_args.txt', 'w') as f:
             json.dump(self.cli_args.__dict__, f, indent=2)
 
     def do_training(self, fold, epoch_ndx, train_dl, num_augmentations=None):
@@ -380,6 +370,28 @@ class Trainer:
                 self.totalTrainingSamples_count,
                 bins=bins,
             )
+
+
+class Trainer(TrainerBase):
+    def __init__(self):
+        super().__init__()
+
+    def init_model(self):
+        model = model_choice(self.cli_args.model)
+        if self.use_cuda:
+            log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
+            if torch.cuda.device_count() > 1:
+                model = nn.DataParallel(model)
+            model = model.to(self.device)
+        return model
+
+    def init_data(self, fold):
+        aug = False
+        if self.cli_args.augments > 0:
+            aug = True
+        train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug)
+        train_dl, val_dl = self.init_loaders(train_ds, val_ds)
+        return train_ds, val_ds, train_dl, val_dl
 
 
 if __name__ == '__main__':
