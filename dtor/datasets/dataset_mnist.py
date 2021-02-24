@@ -10,9 +10,11 @@ import h5py
 import matplotlib.pyplot as plt
 import numpy as np
 
+
 def array_to_color(array, cmap="Oranges"):
     s_m = plt.cm.ScalarMappable(cmap=cmap)
     return s_m.to_rgba(array)[:,:-1]
+
 
 def data_transform(data, labels, req=[0, 1]):
     data_t = []
@@ -27,11 +29,12 @@ def data_transform(data, labels, req=[0, 1]):
         label_t.append(labels[i])
     return np.asarray(data_t, dtype=np.float32), np.asarray(label_t)
 
+
 class MNIST3DDataset(Dataset):
     """Dataset from 3D MNIST point cloud for testing"""
 
-    def __init__(self, tr_test=None):
-        with h5py.File("/Users/sbenson/OpenData/mnist3d/full_dataset_vectors.h5", "r") as hf:    
+    def __init__(self, h5_file, tr_test=None):
+        with h5py.File(h5_file, "r") as hf:
             datapoints = list(hf.keys())
             print(f"Found {list(hf.keys())} keys")
             self.X = hf[f"X_{tr_test}"][:]
