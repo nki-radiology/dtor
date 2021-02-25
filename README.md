@@ -8,6 +8,7 @@ Project Organization
 
     ├── LICENSE
     ├── README.md          <- The top-level README for developers using this project.
+    ├── config             <- JSON files for training configuration
     ├── data
     │   ├── external       <- Data from third party sources.
     │   ├── processed      <- The final, canonical data sets for modeling.
@@ -19,6 +20,8 @@ Project Organization
     │
     ├── requirements.txt   <- The requirements file for reproducing the analysis environment, e.g.
     │                         generated with `pip freeze > requirements.txt`
+    |
+    ├── results            <- Outputs from training
     │
     ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
     ├── scripts                <- Source code for use in this project.
