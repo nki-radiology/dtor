@@ -1,14 +1,14 @@
 {
   "num_workers": 2,
   "batch_size": 32,
-  "epochs": 50,
+  "epochs": 5,
   "seed": 1234,
-  "tb_prefix": "tumor_nonzero_weighted_scaled_aug3_resnet",
-  "comment": "tumor_nonzero_weighted_scaled_aug_resnet",
-  "datapoints": "data/chunked.csv",
+  "tb_prefix": "mnist_example",
+  "comment": "mnist_example",
   "loss": "crossentropy",
-  "model": "resnet18+dense",
+  "model": "nominal_mnist",
+  "dset": "mnist3d",
+  "datapoints": "",
   "load_json": "",
-  "dset": "ltp",
   "augments": 3
 }
