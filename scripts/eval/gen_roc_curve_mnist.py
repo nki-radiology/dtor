@@ -14,7 +14,7 @@ from dtor.datasets.dataset_mnist import MNIST3DDataset
 set_plt_config()
 
 # Load test data
-data = MNIST3DDataset(tr_test="test")
+data = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5", tr_test="test")
 tot_folds = 1
 prefix = "mnist"
 

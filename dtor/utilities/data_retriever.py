@@ -31,8 +31,8 @@ class ConvertDCHWtoCDHW(nn.Module):
 def get_data(name, csv_loc=None, fold=None, aug=False):
     assert name.lower() in ["mnist3d", "ltp"]
     if name.lower() == "mnist3d":
-        train_ds = MNIST3DDataset(tr_test="train")
-        val_ds = MNIST3DDataset(tr_test="test")
+        train_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5", tr_test="train")
+        val_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5", tr_test="test")
     else:
         mean = (0.43216, 0.394666, 0.37645)
         std = (0.22803, 0.22145, 0.216989)
