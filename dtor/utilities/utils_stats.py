@@ -8,6 +8,9 @@ import pandas as pd
 import numpy as np
 from scipy import stats
 import scipy
+from sklearn.metrics import roc_curve
+import matplotlib.pyplot as plt
+import json
 
 # AUC comparison from Nikita Kazeev
 # https://github.com/yandexdataschool/roc_comparison/blob/master/compare_auc_delong_xu.py
@@ -153,3 +156,35 @@ def roc_and_auc(y_pred, y_true):
     print('95% AUC CI:', ci)
 
     return auc, auc_cov, ci
+
+
+def stats_from_results(y_preds, y_labels, plot_name=None, results_name=None, legname=None):
+    # Ploting Receiving Operating Characteristic Curve
+    # Creating true and false positive rates
+    fp, tp, threshold1 = roc_curve(y_labels, y_preds)
+    #
+    auc, auc_cov, ci = roc_and_auc(y_preds, y_labels)
+    #
+    # Ploting ROC curves
+    plt.subplots(1, figsize=(10, 10))
+    plt.title('')
+    plt.plot(fp, tp, label=f'{legname}, AUC={auc:.3f}')
+    plt.plot([0, 1], ls="--", color='gray')
+    plt.ylabel('Sensitivity')
+    plt.xlabel('1-Specificity')
+    plt.legend(loc='lower right')
+
+    if plot_name:
+        plt.savefig(plot_name)
+
+    if results_name:
+        prefix = '.'.join(results_name.split(".")[:-1])
+        res_dict = dict()
+        res_dict['name'] = prefix
+        res_dict['fp'] = fp.tolist()
+        res_dict['tp'] = tp.tolist()
+        res_dict['auc'] = auc
+        res_dict['auc_cov'] = auc_cov
+        res_dict['auc_ci'] = ci.tolist()
+        with open(results_name, 'w') as fout:
+            json.dump(res_dict, fout)

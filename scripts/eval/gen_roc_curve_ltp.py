@@ -4,7 +4,7 @@
 __author__ = "Sean Benson"
 __copyright__ = "MIT"
 
-from dtor.utilities.utils_stats import roc_and_auc
+from dtor.utilities.utils_stats import roc_and_auc, stats_from_results
 import json
 import numpy as np
 from sklearn.metrics import roc_curve
@@ -78,6 +78,9 @@ else:
 y_labels_total = np.array(y_labels_total)
 y_preds_total = np.array(y_preds_total)
 
+plot_name = f"results/roc-{prefix}.png"
+results_name = f'results/res_{prefix}_totfolds_{tot_folds}.json'
+stats_from_results(y_preds_total, y_labels_total, plot_name=plot_name, results_name=results_name)
 # Ploting Receiving Operating Characteristic Curve
 # Creating true and false positive rates
 fp, tp, threshold1 = roc_curve(y_labels_total, y_preds_total)
@@ -92,7 +95,8 @@ plt.plot([0, 1], ls="--", color='gray')
 plt.ylabel('Sensitivity')
 plt.xlabel('1-Specificity')
 plt.legend(loc='lower right')
-plt.savefig(f"results/roc-{prefix}.png")
+plt.savefig()
+
 
 res_dict = dict()
 res_dict['name'] = prefix

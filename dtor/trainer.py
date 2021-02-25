@@ -176,7 +176,7 @@ class TrainerBase:
 
         # Save CLI args
         cli_name = f'results/model-{self.cli_args.tb_prefix}-{time.strftime("%Y%m%d-%H%M%S")}.json'
-        with open('rescommandline_args.txt', 'w') as f:
+        with open(cli_name, 'w') as f:
             json.dump(self.cli_args.__dict__, f, indent=2)
 
     def do_training(self, fold, epoch_ndx, train_dl, num_augmentations=None):
