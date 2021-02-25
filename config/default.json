@@ -1,7 +1,7 @@
 {
   "num_workers": 2,
   "batch_size": 32,
-  "epochs": 5,
+  "epochs": 3,
   "seed": 1234,
   "tb_prefix": "mnist_example",
   "comment": "mnist_example",
