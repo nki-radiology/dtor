@@ -1,7 +1,8 @@
 DTOR
 ==============================
 
-Torch based deep learning response prediction
+DTOR is a project originally designed to assist with the AI-based extraction of features
+for treatment response prediction
 
 Project Organization
 ------------
