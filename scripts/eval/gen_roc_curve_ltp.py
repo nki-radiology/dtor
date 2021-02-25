@@ -9,15 +9,25 @@ import json
 import numpy as np
 from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
-import torch
+import argparse
 from dtor.utilities.utils import load_model, set_plt_config
 from dtor.datasets.dataset_nominal import CTImageDataset
 set_plt_config()
 
-tot_folds = 3
-prefix = "tumor_nonzero_weighted_scaled_aug3_resnet"
-mode = 'concat'
-legname = 'LTP CNN (resnet, WS, aug3)'
+parser = argparse.ArgumentParser()
+parser.add_argument("--tot_folds", type=int, help="Number of folds for model training",
+                    default=3)
+parser.add_argument("--prefix", type=str, help="Training prefix",
+                    default="tumor_nonzero_weighted_scaled_aug3_resnet")
+parser.add_argument("--mode", type=str, help="Data combination mode",
+                    default="concat")
+parser.add_argument("--legname", type=str, help="Legend description",
+                    default='LTP CNN (resnet, WS, aug3)')
+args = parser.parse_args()
+tot_folds = args.tot_folds
+prefix = args.prefix
+mode = args.mode
+legname = args.legname
 
 # Process folds
 res_preds = []
