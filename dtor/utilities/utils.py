@@ -13,6 +13,16 @@ from dtor.utilities.model_retriever import model_choice
 
 
 def image_search(inlist, filename, debug=False):
+    """
+
+    Args:
+        inlist: List of filepaths
+        filename: Suffix to match to
+        debug: Extra info required?
+
+    Returns: Single filepath
+
+    """
     if debug:
         print(inlist)
         print(filename)
@@ -22,6 +32,15 @@ def image_search(inlist, filename, debug=False):
 
 
 def bbox3d(img, _min=0):
+    """
+
+    Args:
+        img: Input numpy array
+        _min: Minimum threshold
+
+    Returns: Indices of bounding box
+
+    """
 
     r = np.any(img, axis=(1, 2))
     c = np.any(img, axis=(0, 2))
@@ -35,11 +54,21 @@ def bbox3d(img, _min=0):
 
 
 def crop3d(in3d, box):
+    """
+
+    Args:
+        in3d: 3D numpy array
+        box: Box boundary indices
+
+    Returns:
+
+    """
     assert len(box) == 6, "Require box=[rmin, rmax, cmin, cmax, zmin, zmax]"
     cropped = in3d[box[0]:box[1], box[2]:box[3], box[4]:box[5]]
     return cropped
 
 
+# Taken from https://github.com/MIC-DKFZ/medicaldetectiontoolkit/blob/master/utils/dataloader_utils.py
 def pad_nd_image(
     image,
     new_shape=None,
@@ -121,6 +150,16 @@ def pad_nd_image(
 
 
 def cutup(data, blck, strd):
+    """
+
+    Args:
+        data: numpy array
+        blck: size of the blocks required
+        strd: step size
+
+    Returns: array of blocks
+
+    """
     sh = np.array(data.shape)
     blck = np.asanyarray(blck)
     strd = np.asanyarray(strd)
@@ -132,6 +171,16 @@ def cutup(data, blck, strd):
 
 
 def expand_image(_img, block, stride):
+    """
+
+    Args:
+        _img: numpy array
+        block: size of the blocks required
+        stride: step size
+
+    Returns: array of blocks
+
+    """
     a_img = view_as_windows(_img, block, step=stride)
     f_img = a_img.reshape(-1, *a_img.shape[-3:])
     # Make sure blocks are padded
@@ -150,6 +199,16 @@ def find_folds(_df):
 
 
 def load_model(prefix, fold, model_type="nominal"):
+    """
+
+    Args:
+        prefix: model prefix name
+        fold: which fold
+        model_type: model structure
+
+    Returns:
+
+    """
     model_name = f"results/model-{prefix}-fold{fold}.pth"
     print(f"Loading model {model_name}")
     _model = model_choice(model_type)
@@ -186,6 +245,16 @@ def get_class_distribution_loaders(dataloader_obj, labels):
 
 
 def get_class_weights(dset, sample_frac=0.2, labels=['0', '1']):
+    """
+
+    Args:
+        dset: torch dataset object
+        sample_frac: how much of the dataset do you want to use for the weight calculation
+        labels: what are the outputs
+
+    Returns: torch 1D tensor with class weights in order
+
+    """
     dataset_size = len(dset)
     dataset_indices = list(range(dataset_size))
     np.random.shuffle(dataset_indices)

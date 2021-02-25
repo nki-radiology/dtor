@@ -21,6 +21,7 @@ npy_name = lambda x, p, t: os.path.join(pathlib.Path(os.environ["DTORROOT"]),
 sub_name = lambda n, p, t: os.path.join(pathlib.Path(os.environ["DTORROOT"]),
                                 f"data/cache/{p}_{t}_{n}.npy")
 
+
 class CTImageDataset(Dataset):
     """Dataset from CT images."""
 
@@ -35,6 +36,20 @@ class CTImageDataset(Dataset):
                             tr_test=None, # use
                             transform=None # use
                             ):
+        """
+        Initialization
+        Args:
+            label_file: File with the image locations
+            root_dir: Package location
+            shape: How big do we want our 3d chunks to be
+            stride: Overlap
+            tot_folds: Number of folds in our K-fold
+            label: Output training label
+            chunked_csv: Where are our chunked images
+            fold: Which fold to return
+            tr_test: Test or train
+            transform: Any augmentations needed or preprocessing steps
+        """
 
         self.root_dir = root_dir
         self.transform = transform
@@ -78,7 +93,7 @@ class CTImageDataset(Dataset):
 
         return sample
 
-    def expand_points(self, shape=(64,64,32), stride=(48, 48, 24), label="LTP", tot_folds=1):
+    def expand_points(self, shape=(64, 64, 32), stride=(48, 48, 24), label="LTP", tot_folds=1):
         d_data = dict()
         d_data["patient"] = []
         d_data["abl"] = []

@@ -159,6 +159,18 @@ def roc_and_auc(y_pred, y_true):
 
 
 def stats_from_results(y_preds, y_labels, plot_name=None, results_name=None, legname=None):
+    """
+
+    Args:
+        y_preds: Model predictions
+        y_labels: Truth
+        plot_name: Output plot name
+        results_name: Results dictionary name
+        legname: Legend text
+
+    Returns: None
+
+    """
     # Ploting Receiving Operating Characteristic Curve
     # Creating true and false positive rates
     fp, tp, threshold1 = roc_curve(y_labels, y_preds)
