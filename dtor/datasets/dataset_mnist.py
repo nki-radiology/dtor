@@ -11,17 +11,18 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+@staticmethod
 def array_to_color(array, cmap="Oranges"):
     s_m = plt.cm.ScalarMappable(cmap=cmap)
-    return s_m.to_rgba(array)[:,:-1]
+    return s_m.to_rgba(array)[:, :-1]
 
 
+@staticmethod
 def data_transform(data, labels, req=[0, 1]):
     data_t = []
     label_t = []
     for i in range(data.shape[0]):
         if labels[i] not in req:
-            #print(labels[i])
             continue
         i_data = array_to_color(data[i]).reshape(16, 16, 16, 3)
         i_data = np.moveaxis(i_data, -1, 0) 
@@ -31,9 +32,18 @@ def data_transform(data, labels, req=[0, 1]):
 
 
 class MNIST3DDataset(Dataset):
-    """Dataset from 3D MNIST point cloud for testing"""
+    """
+    Dataset from 3D MNIST point cloud for testing
+    """
 
     def __init__(self, h5_file, tr_test=None):
+        """
+        Initialization
+
+        :param h5_file: data location
+        :param tr_test: train or test subset
+        """
+
         with h5py.File(h5_file, "r") as hf:
             datapoints = list(hf.keys())
             print(f"Found {list(hf.keys())} keys")

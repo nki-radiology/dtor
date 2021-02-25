@@ -29,6 +29,17 @@ class ConvertDCHWtoCDHW(nn.Module):
 
 
 def get_data(name, csv_loc=None, fold=None, aug=False):
+    """
+    Helper function for datasets
+    Args:
+        name: dataset name
+        csv_loc: location of file locs
+        fold: which fold
+        aug: do you want to include augmentations
+
+    Returns: torch dataset
+
+    """
     assert name.lower() in ["mnist3d", "ltp"]
     if name.lower() == "mnist3d":
         train_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5", tr_test="train")
