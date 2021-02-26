@@ -378,6 +378,8 @@ class Trainer(TrainerBase):
     def init_model(self):
         if self.cli_args.resume:
             model = load_model("noprefix", "nofold", self.cli_args.model, self.cli_args.resume)
+        elif self.cli_args.pretrain_loc:
+            model = model_choice(self.cli_args.model, pretrain_loc=self.cli_args.pretrain_loc)
         else:
             model = model_choice(self.cli_args.model)
 

@@ -86,6 +86,12 @@ def init_parser():
                         nargs='?',
                         default="",
                         )
+    parser.add_argument('--pretrain_loc',
+                        help="Feature extraction pretrained location",
+                        type=str,
+                        nargs='?',
+                        default="",
+                        )
     return parser
 
 
