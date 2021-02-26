@@ -198,31 +198,24 @@ def find_folds(_df):
     return len(folds)
 
 
-def load_model(prefix, fold, model_type="nominal"):
+def load_model(prefix, fold, model_type="nominal", full_name=None):
     """
 
     Args:
         prefix: model prefix name
         fold: which fold
         model_type: model structure
+        full_name: Use this to load the model if given
 
     Returns:
 
     """
     model_name = f"results/model-{prefix}-fold{fold}.pth"
+    if full_name:
+        model_name = full_name
     print(f"Loading model {model_name}")
     _model = model_choice(model_type)
-    try:
-        _model.load_state_dict(torch.load(model_name, map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu")))
-    except RuntimeError:
-        _d = torch.load(model_name,  map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu"))
-        for k in list(_d.keys()):
-            newkey = '.'.join(k.split('.')[1:])
-            print(f"{k} becomes {newkey}")
-            _d[newkey] = _d[k]
-            _d.pop(k, None)
-        _model.load_state_dict(_d)
-    _model.eval()
+    _model = safe_restore(_model, model_name)
     return _model
 
 
@@ -272,3 +265,28 @@ def get_class_weights(dset, sample_frac=0.2, labels=['0', '1']):
         out_weight[int(k)] = 1.0/f
     print(f"Calculated class weights as {out_weight}")
     return torch.FloatTensor(out_weight)
+
+
+def safe_restore(_model, state_loc):
+    """
+
+    Args:
+        _model: Input model object
+        state_loc: Location of the state dict
+
+    Returns: updated model
+
+    """
+
+    try:
+        _model.load_state_dict(torch.load(state_loc,
+                                          map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu")))
+    except RuntimeError:
+        _d = torch.load(state_loc,  map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu"))
+        for k in list(_d.keys()):
+            newkey = '.'.join(k.split('.')[1:])
+            print(f"{k} becomes {newkey}")
+            _d[newkey] = _d[k]
+            _d.pop(k, None)
+        _model.load_state_dict(_d)
+    return _model

@@ -80,6 +80,12 @@ def init_parser():
                         nargs='?',
                         default="0",
                         )
+    parser.add_argument('--resume',
+                        help="Checkpoint to resume from",
+                        type=str,
+                        nargs='?',
+                        default="",
+                        )
     return parser
 
 

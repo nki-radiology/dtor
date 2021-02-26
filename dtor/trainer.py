@@ -25,7 +25,7 @@ import torchvision.models as tv_models
 from dtor.loss.diceloss import DiceLoss
 from dtor.logconf import enumerate_with_estimate
 from dtor.logconf import logging
-from dtor.utilities.utils import find_folds, get_class_weights
+from dtor.utilities.utils import find_folds, get_class_weights, load_model
 from dtor.utilities.model_retriever import model_choice
 from dtor.utilities.data_retriever import get_data
 from dtor.opts import init_parser
@@ -376,7 +376,11 @@ class Trainer(TrainerBase):
         super().__init__()
 
     def init_model(self):
-        model = model_choice(self.cli_args.model)
+        if self.cli_args.resume:
+            model = load_model("noprefix", "nofold", self.cli_args.model, self.cli_args.resume)
+        else:
+            model = model_choice(self.cli_args.model)
+
         if self.use_cuda:
             log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
             if torch.cuda.device_count() > 1:
