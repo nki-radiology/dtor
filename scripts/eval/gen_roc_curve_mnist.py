@@ -7,7 +7,8 @@ __copyright__ = "MIT"
 from dtor.utilities.utils_stats import stats_from_results
 import numpy as np
 import torch
-from dtor.utilities.utils import load_model, set_plt_config
+from dtor.utilities.utils import set_plt_config
+from dtor.utilities.model_retriever import load_model
 from dtor.datasets.dataset_mnist import MNIST3DDataset
 set_plt_config()
 

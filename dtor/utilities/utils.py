@@ -9,7 +9,6 @@ from numpy.lib import stride_tricks
 from skimage.util.shape import view_as_windows
 import torch
 import matplotlib.pylab as pylab
-from dtor.utilities.model_retriever import model_choice
 
 
 def image_search(inlist, filename, debug=False):
@@ -196,27 +195,6 @@ def find_folds(_df):
     cols = list(_df.columns.values)
     folds = [f for f in cols if "fold" in f]
     return len(folds)
-
-
-def load_model(prefix, fold, model_type="nominal", full_name=None):
-    """
-
-    Args:
-        prefix: model prefix name
-        fold: which fold
-        model_type: model structure
-        full_name: Use this to load the model if given
-
-    Returns:
-
-    """
-    model_name = f"results/model-{prefix}-fold{fold}.pth"
-    if full_name:
-        model_name = full_name
-    print(f"Loading model {model_name}")
-    _model = model_choice(model_type)
-    _model = safe_restore(_model, model_name)
-    return _model
 
 
 def set_plt_config():

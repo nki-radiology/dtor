@@ -10,7 +10,8 @@ import numpy as np
 from sklearn.metrics import roc_curve
 import matplotlib.pyplot as plt
 import argparse
-from dtor.utilities.utils import load_model, set_plt_config
+from dtor.utilities.utils import set_plt_config
+from dtor.utilities.model_retriever import load_model
 from dtor.datasets.dataset_nominal import CTImageDataset
 set_plt_config()
 
