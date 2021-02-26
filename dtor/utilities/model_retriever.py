@@ -14,7 +14,7 @@ from torchvision.models.video import r3d_18
 from dtor.utilities.utils import safe_restore
 
 
-def model_choice(m_name="nominal", pretrain_loc=None):
+def model_choice(m_name="nominal", pretrain_loc=None, resume=None):
     assert m_name in ["nominal", "resnet18", "resnet18+dense", "nominal_mnist", "unet"]
 
     if m_name == "nominal":
@@ -34,5 +34,8 @@ def model_choice(m_name="nominal", pretrain_loc=None):
         model = ModelBSingle(modela)
     else:
         raise NotImplementedError
+
+    if resume:
+        model = safe_restore(model, resume)
 
     return model

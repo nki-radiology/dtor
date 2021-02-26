@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class ModelB(nn.Module):
-    def __init__(self, inmodel, base_output_shape = 3172, output_classes=2, fix_inmodel=True):
+    def __init__(self, inmodel, base_output_shape=3172, output_classes=2, fix_inmodel=True):
         super(ModelB, self).__init__()
         self.modelA = inmodel
 
