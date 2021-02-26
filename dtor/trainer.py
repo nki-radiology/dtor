@@ -25,7 +25,7 @@ import torchvision.models as tv_models
 from dtor.loss.diceloss import DiceLoss
 from dtor.logconf import enumerate_with_estimate
 from dtor.logconf import logging
-from dtor.utilities.utils import find_folds, get_class_weights, load_model
+from dtor.utilities.utils import find_folds, get_class_weights
 from dtor.utilities.model_retriever import model_choice
 from dtor.utilities.data_retriever import get_data
 from dtor.opts import init_parser
@@ -377,7 +377,7 @@ class Trainer(TrainerBase):
 
     def init_model(self):
         if self.cli_args.resume:
-            model = load_model("noprefix", "nofold", self.cli_args.model, self.cli_args.resume)
+            model = model_choice(self.cli_args.model, resume=self.cli_args.resume)
         else:
             model = model_choice(self.cli_args.model)
 
