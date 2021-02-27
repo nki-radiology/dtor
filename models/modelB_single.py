@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class ModelBSingle(nn.Module):
-    def __init__(self, inmodel, base_output_shape=6425228, output_classes=2, fix_inmodel=True):
+    def __init__(self, inmodel, base_output_shape=1806336, output_classes=2, fix_inmodel=True):
         super(ModelBSingle, self).__init__()
         self.modelA = inmodel
 
@@ -26,7 +26,7 @@ class ModelBSingle(nn.Module):
             x.size(0),
             -1,
         )
-        print(conv_flat.shape)
+        #print(conv_flat.shape)
         x = self.block1(x)
         x = self.block2(x)
         x = self.classifier(x)
