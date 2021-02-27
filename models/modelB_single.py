@@ -27,7 +27,7 @@ class ModelBSingle(nn.Module):
             -1,
         )
         #print(conv_flat.shape)
-        x = self.block1(x)
+        x = self.block1(conv_flat)
         x = self.block2(x)
         x = self.classifier(x)
         
