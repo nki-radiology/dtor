@@ -19,7 +19,7 @@ class ModelBSingle(nn.Module):
     def forward(self, x):
         processed = nn.ModuleList()
         for i in range(x.size(1)):
-            processed.append(self.modelA(x[:, i, :, :, :]))
+            processed.append(self.modelA(x[:, i, :, :, :].unsqueeze(dim=1)))
         x = torch.cat(processed, dim=1)
         x = self.block1(x)
         x = self.block2(x)
