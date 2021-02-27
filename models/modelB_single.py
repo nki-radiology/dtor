@@ -17,7 +17,7 @@ class ModelBSingle(nn.Module):
         self.head_softmax = nn.Softmax(dim=1)
         
     def forward(self, x):
-        processed = []
+        processed = nn.ModuleList()
         for i in range(x.size(1)):
             processed.append(self.modelA(x[:, i, :, :, :]))
         x = torch.cat(processed, dim=1)
