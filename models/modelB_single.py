@@ -21,6 +21,12 @@ class ModelBSingle(nn.Module):
         for i in range(x.size(1)):
             processed.append(self.modelA(x[:, i, :, :, :].unsqueeze(dim=1)))
         x = torch.cat(processed, dim=1)
+
+        conv_flat = x.view(
+            x.size(0),
+            -1,
+        )
+        print(conv_flat.shape)
         x = self.block1(x)
         x = self.block2(x)
         x = self.classifier(x)
