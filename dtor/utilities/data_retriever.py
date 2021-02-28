@@ -28,7 +28,9 @@ class ConvertDCHWtoCDHW(nn.Module):
         return vid.permute(1, 0, 2, 3)
 
 
-def get_data(name, csv_loc=None, fold=None, aug=False):
+def get_data(name, csv_loc=None, fold=None, aug=False,
+             mean=(0.43216, 0.394666, 0.37645),
+             std=(0.22803, 0.22145, 0.216989)):
     """
     Helper function for datasets
     Args:
@@ -36,6 +38,8 @@ def get_data(name, csv_loc=None, fold=None, aug=False):
         csv_loc: location of file locs
         fold: which fold
         aug: do you want to include augmentations
+        mean: mean of the channels for transform
+        std: std deviation of the channels for the transform
 
     Returns: torch dataset
 
@@ -45,9 +49,6 @@ def get_data(name, csv_loc=None, fold=None, aug=False):
         train_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5", tr_test="train")
         val_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5", tr_test="test")
     else:
-        mean = (0.43216, 0.394666, 0.37645)
-        std = (0.22803, 0.22145, 0.216989)
-
         # Do not throw randomised transforms in for the case of evaluation
         tr_eval = transforms.Compose([
             ConvertCDHWtoDCHW(),
