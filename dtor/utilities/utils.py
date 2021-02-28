@@ -8,7 +8,9 @@ import numpy as np
 from numpy.lib import stride_tricks
 from skimage.util.shape import view_as_windows
 import torch
+from torchvision import transforms
 import matplotlib.pylab as pylab
+import PIL
 
 
 def image_search(inlist, filename, debug=False):
@@ -270,3 +272,24 @@ def safe_restore(_model, state_loc):
             _d.pop(k, None)
         _model.load_state_dict(_d)
     return _model
+
+
+class Stats(PIL.ImageStat.Stat):
+    def add(self, other):
+        return Stats(list(map(np.add, self.h, other.h)))
+
+
+def find_mean_std(dl):
+    statistics = None
+    to_pil = transforms.ToPILImage()
+
+    print(PIL.__version__)
+
+    for data, _ in dl:
+        for b in range(data.shape[0]):
+            if statistics is None:
+                print(type(to_pil(data[b])))
+                statistics = Stats(to_pil(data[b]))
+            else:
+                statistics += Stats(to_pil(data[b]))
+    print(f'mean:{statistics.mean}, std:{statistics.stddev}')
