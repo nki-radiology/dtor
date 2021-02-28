@@ -108,8 +108,9 @@ class CTImageDataset(Dataset):
         print(f"Generating {tot_folds} folds, from dataset:")
         print(self.images_frame)
 
+        splits_frame = self.images_frame.drop_duplicates(subset=["StudyID"])
         _kf = StratifiedKFold(n_splits=tot_folds, random_state=42, shuffle=True)
-        for f, (train, test) in enumerate(_kf.split(self.images_frame, self.images_frame[label])):
+        for f, (train, test) in enumerate(_kf.split(splits_frame, splits_frame[label])):
             colname = f"fold_{f}"
             for n in range(len(self.images_frame)):
                 self.images_frame[colname] = self.images_frame.apply(lambda x: "train" if int(x.name) in train else "test",
