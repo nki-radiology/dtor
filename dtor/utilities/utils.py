@@ -275,7 +275,7 @@ def safe_restore(_model, state_loc):
 
 
 class Stats(PIL.ImageStat.Stat):
-    def add(self, other):
+    def __add__(self, other):
         return Stats(list(map(np.add, self.h, other.h)))
 
 
@@ -283,13 +283,13 @@ def find_mean_std(dl):
     statistics = None
     to_pil = transforms.ToPILImage()
 
-    print(PIL.__version__)
-
     for data, _ in dl:
         for b in range(data.shape[0]):
-            if statistics is None:
-                print(type(to_pil(data[b])))
-                statistics = Stats(to_pil(data[b]))
-            else:
-                statistics += Stats(to_pil(data[b]))
+            for _channel in range(data.shape[1]):
+                for _slice in range(data.shape[2]):
+                    _image = data[b][_channel][_slice]
+                    if statistics is None:
+                        statistics = Stats(to_pil(_image))
+                    else:
+                        statistics += Stats(to_pil(_image))
     print(f'mean:{statistics.mean}, std:{statistics.stddev}')

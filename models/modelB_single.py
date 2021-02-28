@@ -12,8 +12,7 @@ class ModelBSingle(nn.Module):
                 param.requires_grad = False
         
         self.block1 = nn.Linear(base_output_shape, 50)
-        self.block2 = nn.Linear(50, 8)
-        self.classifier = nn.Linear(8, output_classes)
+        self.classifier = nn.Linear(50, output_classes)
         self.head_softmax = nn.Softmax(dim=1)
         
     def forward(self, x):
@@ -28,7 +27,6 @@ class ModelBSingle(nn.Module):
         )
         #print(conv_flat.shape)
         x = self.block1(conv_flat)
-        x = self.block2(x)
         x = self.classifier(x)
         
         return x, self.head_softmax(x)
