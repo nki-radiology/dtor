@@ -186,7 +186,7 @@ class CTImageDataset(Dataset):
                     d_data[f"fold_{f}"].append(d_tmp[f"fold_{f}"])
 
                 fname = sub_name(point_counter, patient, abl)
-                data = np.stack((f_post, f_pre), axis=-1)
+                data = np.stack((f_post, f_pre, f_tumor), axis=-1)
                 data = np.moveaxis(data, -1, 0)
                 np.save(fname, data)
                 d_data["filename"].append(fname)
