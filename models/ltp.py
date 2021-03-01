@@ -14,7 +14,7 @@ log.setLevel(logging.DEBUG)
 
 
 class Model(nn.Module):
-    def __init__(self, in_channels=2, conv_channels=8, prelim=3136): # (64 for MNIST 3D)
+    def __init__(self, in_channels=3, conv_channels=8, prelim=4096): # (64 for MNIST 3D)
         super().__init__()
 
         self.tail_batchnorm = nn.BatchNorm3d(in_channels)
