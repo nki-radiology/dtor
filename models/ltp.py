@@ -14,15 +14,15 @@ log.setLevel(logging.DEBUG)
 
 
 class Model(nn.Module):
-    def __init__(self, in_channels=3, conv_channels=8, prelim=4096): # (64 for MNIST 3D)
+    def __init__(self, in_channels=3, conv_channels=8, prelim=65536): # (64 for MNIST 3D)
         super().__init__()
 
         self.tail_batchnorm = nn.BatchNorm3d(in_channels)
 
         self.block1 = LTPBlock(in_channels, conv_channels)
         self.block2 = LTPBlock(conv_channels, conv_channels * 2)
-        self.block3 = LTPBlock(conv_channels * 2, conv_channels * 4)
-        self.block4 = LTPBlock(conv_channels * 4, conv_channels * 8)
+        #self.block3 = LTPBlock(conv_channels * 2, conv_channels * 4)
+        #self.block4 = LTPBlock(conv_channels * 4, conv_channels * 8)
 
         self.head_linear = nn.Linear(prelim, 2)
         self.head_softmax = nn.Softmax(dim=1)
@@ -56,9 +56,9 @@ class Model(nn.Module):
         #print(block_out.shape)
         block_out = self.block2(block_out)
         #print(block_out.shape)
-        block_out = self.block3(block_out)
+        #block_out = self.block3(block_out)
         #print(block_out.shape)
-        block_out = self.block4(block_out)
+        #block_out = self.block4(block_out)
         #print(block_out.shape)
 
         conv_flat = block_out.view(
