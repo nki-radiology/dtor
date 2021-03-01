@@ -9,6 +9,7 @@ from torch.utils.data import Dataset
 import pathlib
 import numpy as np
 from dtor.utilities.utils import cutup, pad_nd_image, expand_image
+from dtor.utilities.utils import bbox3d, crop3d
 from tqdm import tqdm
 from tqdm.contrib import tzip
 import pandas as pd
@@ -29,6 +30,7 @@ class CTImageDataset(Dataset):
                             root_dir=os.environ["DTORROOT"], # create
                             shape=(64,64,32), # create
                             stride=(48, 48, 24), # create
+                            buffer=10, # create
                             tot_folds=3, # create
                             label="L_LTP_date", # create
                             chunked_csv=None, # use
@@ -43,6 +45,7 @@ class CTImageDataset(Dataset):
             root_dir: Package location
             shape: How big do we want our 3d chunks to be
             stride: Overlap
+            buffer: Buffer around the ablation zone
             tot_folds: Number of folds in our K-fold
             label: Output training label
             chunked_csv: Where are our chunked images
@@ -53,6 +56,7 @@ class CTImageDataset(Dataset):
 
         self.root_dir = root_dir
         self.transform = transform
+        self.buffer = buffer
         if chunked_csv:
             self.chunked_images = pd.read_csv(chunked_csv, sep="\t")
             # Restrict by fold + train/test
@@ -135,58 +139,60 @@ class CTImageDataset(Dataset):
             o_tumor_post = npy_name("tumor_post", patient, abl)
             #
             if not os.path.exists(o_liver_post):
-                print ("Files not found, skipping")
+                print("Files not found, skipping")
                 continue
+
             liver_post = np.load(o_liver_post)
             liver_pre = np.load(o_liver_pre)
             tumor_post = np.load(o_tumor_post)
 
-            # Generate our (padded if necessary) chunks
-            try:
-                l_liver_post = expand_image(liver_post, shape, stride)
-                l_liver_pre = expand_image(liver_pre, shape, stride)
-                l_tumor_post = expand_image(tumor_post, shape, stride)
-            except ValueError:
-                print("Expand failed, likely cropped too small")
-                continue
+            # Crop around each ablation zone
+            for a in np.unique(tumor_post):
+                c_tumor_post = np.where(tumor_post == a, 1, 0)
+                a_box = bbox3d(c_tumor_post, _buffer=self.buffer)
+                cc_tumor_post = crop3d(c_tumor_post, a_box)
+                cc_liver_post = crop3d(liver_post, a_box)
+                cc_liver_pre = crop3d(liver_pre, a_box)
 
-            # Fill in the target dataframe
-            d_tmp = dict()
-            for f in range(tot_folds):
-                d_tmp[f"fold_{f}"] = self.images_frame.loc[n1, f"fold_{f}"]
-
-            #scaler = StandardScaler()
-            #l_liver_post = scaler.fit_transform(l_liver_post.reshape(-1, l_liver_post.shape[-1]).reshape(-1, l_liver_post.shape[-1])).reshape(l_liver_post.shape)
-            #l_liver_pre = scaler.fit_transform(l_liver_pre.reshape(-1, l_liver_pre.shape[-1]) .reshape(-1, l_liver_pre.shape[-1])).reshape(l_liver_pre.shape)
-            
-            for _l in tzip(l_liver_post, l_liver_pre, l_tumor_post):
-                f_post, f_pre, f_tumor = _l
-                #if any([np.sum(f_post)<1.0, np.sum(f_pre)<1.0]):
-                if any([np.sum(f_post)<0.1, np.sum(f_pre)<0.1, np.sum(f_tumor)<1.0]):
-                    #print("Zero volume in a scan channel, skipping")
+                # Generate our (padded if necessary) chunks
+                try:
+                    l_liver_post = expand_image(cc_liver_post, shape, stride)
+                    l_liver_pre = expand_image(cc_liver_pre, shape, stride)
+                    l_tumor_post = expand_image(cc_tumor_post, shape, stride)
+                except ValueError:
+                    print("Expand failed, likely cropped too small")
                     continue
-                d_data["patient"].append(patient)
-                d_data["abl"].append(abl)
-                d_data["label"].append(_label)
-                #
-                d_data["weight"].append(1.0+(np.sum(f_tumor)/f_tumor.size))
-                #
-                d_data["data_point_id"].append(point_counter)
-                #
-                for f in range(tot_folds):
-                    d_data[f"fold_{f}"].append(d_tmp[f"fold_{f}"])
 
-                fname = sub_name(point_counter, patient, abl)
-                data = np.stack((f_post, f_pre, f_tumor), axis = -1)
-                data = np.moveaxis(data, -1, 0)
-                np.save(fname, data)
-                d_data["filename"].append(fname)
-                point_counter += 1
+                # Fill in the target dataframe
+                d_tmp = dict()
+                for f in range(tot_folds):
+                    d_tmp[f"fold_{f}"] = self.images_frame.loc[n1, f"fold_{f}"]
+
+                for _l in tzip(l_liver_post, l_liver_pre, l_tumor_post):
+                    f_post, f_pre, f_tumor = _l
+                    if any([np.sum(f_post) < 0.1, np.sum(f_pre) < 0.1, np.sum(f_tumor) < 1.0]):
+                        continue
+                    d_data["patient"].append(patient)
+                    d_data["abl"].append(abl)
+                    d_data["label"].append(_label)
+                    #
+                    d_data["weight"].append(1.0+(np.sum(f_tumor)/f_tumor.size))
+                    #
+                    d_data["data_point_id"].append(point_counter)
+                    #
+                    for f in range(tot_folds):
+                        d_data[f"fold_{f}"].append(d_tmp[f"fold_{f}"])
+
+                    fname = sub_name(point_counter, patient, abl)
+                    data = np.stack((f_post, f_pre, f_tumor), axis=-1)
+                    data = np.moveaxis(data, -1, 0)
+                    np.save(fname, data)
+                    d_data["filename"].append(fname)
+                    point_counter += 1
 
         # Make dataframe from dictionary
         df = pd.DataFrame.from_dict(d_data)
         df.set_index("data_point_id")
-        df_chunked_fname = os.path.join(pathlib.Path(os.environ["DTORROOT"]),
-                                f"data/chunked.csv")
+        df_chunked_fname = os.path.join(pathlib.Path(os.environ["DTORROOT"]), f"data/chunked.csv")
         df.to_csv(df_chunked_fname, sep="\t")
         return df
