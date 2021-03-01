@@ -155,6 +155,7 @@ class CTImageDataset(Dataset):
             cc_liver_post = crop3d(liver_post, a_box)
             cc_liver_pre = crop3d(liver_pre, a_box)
 
+            print(f"Final cropped shape is {cc_liver_post.shape}")
             # Generate our (padded if necessary) chunks
             try:
                 l_liver_post = expand_image(cc_liver_post, shape, stride)
