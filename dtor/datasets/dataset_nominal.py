@@ -147,48 +147,49 @@ class CTImageDataset(Dataset):
             tumor_post = np.load(o_tumor_post)
 
             # Crop around each ablation zone
-            for a in np.unique(tumor_post):
-                c_tumor_post = np.where(tumor_post == a, 1, 0)
-                a_box = bbox3d(c_tumor_post, _buffer=self.buffer)
-                cc_tumor_post = crop3d(c_tumor_post, a_box)
-                cc_liver_post = crop3d(liver_post, a_box)
-                cc_liver_pre = crop3d(liver_pre, a_box)
+            a = int(self.images_frame.loc[n1, 'L_Label'])
 
-                # Generate our (padded if necessary) chunks
-                try:
-                    l_liver_post = expand_image(cc_liver_post, shape, stride)
-                    l_liver_pre = expand_image(cc_liver_pre, shape, stride)
-                    l_tumor_post = expand_image(cc_tumor_post, shape, stride)
-                except ValueError:
-                    print("Expand failed, likely cropped too small")
+            c_tumor_post = np.where(tumor_post == a, 1, 0)
+            a_box = bbox3d(c_tumor_post, _buffer=self.buffer)
+            cc_tumor_post = crop3d(c_tumor_post, a_box)
+            cc_liver_post = crop3d(liver_post, a_box)
+            cc_liver_pre = crop3d(liver_pre, a_box)
+
+            # Generate our (padded if necessary) chunks
+            try:
+                l_liver_post = expand_image(cc_liver_post, shape, stride)
+                l_liver_pre = expand_image(cc_liver_pre, shape, stride)
+                l_tumor_post = expand_image(cc_tumor_post, shape, stride)
+            except ValueError:
+                print("Expand failed, likely cropped too small")
+                continue
+
+            # Fill in the target dataframe
+            d_tmp = dict()
+            for f in range(tot_folds):
+                d_tmp[f"fold_{f}"] = self.images_frame.loc[n1, f"fold_{f}"]
+
+            for _l in tzip(l_liver_post, l_liver_pre, l_tumor_post):
+                f_post, f_pre, f_tumor = _l
+                if any([np.sum(f_post) < 0.1, np.sum(f_pre) < 0.1, np.sum(f_tumor) < 1.0]):
                     continue
-
-                # Fill in the target dataframe
-                d_tmp = dict()
+                d_data["patient"].append(patient)
+                d_data["abl"].append(abl)
+                d_data["label"].append(_label)
+                #
+                d_data["weight"].append(1.0+(np.sum(f_tumor)/f_tumor.size))
+                #
+                d_data["data_point_id"].append(point_counter)
+                #
                 for f in range(tot_folds):
-                    d_tmp[f"fold_{f}"] = self.images_frame.loc[n1, f"fold_{f}"]
+                    d_data[f"fold_{f}"].append(d_tmp[f"fold_{f}"])
 
-                for _l in tzip(l_liver_post, l_liver_pre, l_tumor_post):
-                    f_post, f_pre, f_tumor = _l
-                    if any([np.sum(f_post) < 0.1, np.sum(f_pre) < 0.1, np.sum(f_tumor) < 1.0]):
-                        continue
-                    d_data["patient"].append(patient)
-                    d_data["abl"].append(abl)
-                    d_data["label"].append(_label)
-                    #
-                    d_data["weight"].append(1.0+(np.sum(f_tumor)/f_tumor.size))
-                    #
-                    d_data["data_point_id"].append(point_counter)
-                    #
-                    for f in range(tot_folds):
-                        d_data[f"fold_{f}"].append(d_tmp[f"fold_{f}"])
-
-                    fname = sub_name(point_counter, patient, abl)
-                    data = np.stack((f_post, f_pre, f_tumor), axis=-1)
-                    data = np.moveaxis(data, -1, 0)
-                    np.save(fname, data)
-                    d_data["filename"].append(fname)
-                    point_counter += 1
+                fname = sub_name(point_counter, patient, abl)
+                data = np.stack((f_post, f_pre, f_tumor), axis=-1)
+                data = np.moveaxis(data, -1, 0)
+                np.save(fname, data)
+                d_data["filename"].append(fname)
+                point_counter += 1
 
         # Make dataframe from dictionary
         df = pd.DataFrame.from_dict(d_data)
