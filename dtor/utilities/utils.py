@@ -32,7 +32,7 @@ def image_search(inlist, filename, debug=False):
     return im[0]
 
 
-def bbox3d(img, _min=0):
+def bbox3d(img, _min=0, _buffer=0):
     """
 
     Args:
@@ -51,7 +51,7 @@ def bbox3d(img, _min=0):
     cmin, cmax = np.where(c > _min)[0][[0, -1]]
     zmin, zmax = np.where(z > _min)[0][[0, -1]]
 
-    return rmin, rmax, cmin, cmax, zmin, zmax
+    return rmin-_buffer, rmax+_buffer, cmin-_buffer, cmax+_buffer, zmin-_buffer, zmax+_buffer
 
 
 def crop3d(in3d, box):
