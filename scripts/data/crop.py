@@ -55,7 +55,7 @@ for n in range(len(dirs)):
     c_liver_post = crop3d(a_liver_post, box)
     c_tumor_post = crop3d(sitk.GetArrayFromImage(sitk.ReadImage(tumor_post)), box)
     # For the tumor we say that any non-zero point is treated the same
-    c_tumor_post = np.where(c_tumor_post>0, 1, 0)
+    #c_tumor_post = np.where(c_tumor_post>0, 1, 0) # Need to turn this off
     c_liver_pre = crop3d(sitk.GetArrayFromImage(sitk.ReadImage(liver_pre)), box)
 
 
