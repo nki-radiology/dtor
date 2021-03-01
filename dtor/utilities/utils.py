@@ -51,7 +51,12 @@ def bbox3d(img, _min=0, _buffer=0):
     cmin, cmax = np.where(c > _min)[0][[0, -1]]
     zmin, zmax = np.where(z > _min)[0][[0, -1]]
 
-    return rmin-_buffer, rmax+_buffer, cmin-_buffer, cmax+_buffer, zmin-_buffer, zmax+_buffer
+    _rm = img.shape[0]-_buffer-1
+    _cm = img.shape[1]-_buffer-1
+    _zm = img.shape[2]-_buffer-1
+    print(f"Image shape: {img.shape}")
+    
+    return max(rmin, _buffer+1)-_buffer, min(rmax, _rm)+_buffer, max(cmin, _buffer+1)-_buffer, min(cmax, _cm)+_buffer, max(zmin, _buffer+1)-_buffer, max(zmax, _zm)+_buffer
 
 
 def crop3d(in3d, box):
@@ -182,6 +187,17 @@ def expand_image(_img, block, stride):
     Returns: array of blocks
 
     """
+    to_pad = []
+    pad = False
+    for i in range(len(_img.shape)):
+        if _img.shape[i] < block[i]:
+            pad = True
+            to_pad.append(block[i])
+        else:
+            to_pad.append(_img.shape[i])
+    if pad:
+        print(f"Enttire image must be padded: {_img.shape}, must be padded")
+        _img = pad_nd_image(_img, new_shape=to_pad)
     a_img = view_as_windows(_img, block, step=stride)
     f_img = a_img.reshape(-1, *a_img.shape[-3:])
     # Make sure blocks are padded

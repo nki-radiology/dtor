@@ -156,14 +156,11 @@ class CTImageDataset(Dataset):
             cc_liver_pre = crop3d(liver_pre, a_box)
 
             print(f"Final cropped shape is {cc_liver_post.shape}")
+            print(f"Box was {a_box}")
             # Generate our (padded if necessary) chunks
-            try:
-                l_liver_post = expand_image(cc_liver_post, shape, stride)
-                l_liver_pre = expand_image(cc_liver_pre, shape, stride)
-                l_tumor_post = expand_image(cc_tumor_post, shape, stride)
-            except ValueError:
-                print("Expand failed, likely cropped too small")
-                continue
+            l_liver_post = expand_image(cc_liver_post, shape, stride)
+            l_liver_pre = expand_image(cc_liver_pre, shape, stride)
+            l_tumor_post = expand_image(cc_tumor_post, shape, stride)
 
             # Fill in the target dataframe
             d_tmp = dict()
