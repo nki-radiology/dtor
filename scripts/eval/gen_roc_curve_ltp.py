@@ -4,11 +4,8 @@
 __author__ = "Sean Benson"
 __copyright__ = "MIT"
 
-from dtor.utilities.utils_stats import roc_and_auc, stats_from_results
-import json
+from dtor.utilities.utils_stats import stats_from_results
 import numpy as np
-from sklearn.metrics import roc_curve
-import matplotlib.pyplot as plt
 import argparse
 from dtor.utilities.utils import set_plt_config
 from dtor.utilities.model_retriever import load_model
@@ -19,11 +16,11 @@ parser = argparse.ArgumentParser()
 parser.add_argument("--tot_folds", type=int, help="Number of folds for model training",
                     default=3)
 parser.add_argument("--prefix", type=str, help="Training prefix",
-                    default="tumor_nonzero_weighted_scaled_aug3_resnet")
+                    default="default")
 parser.add_argument("--mode", type=str, help="Data combination mode",
                     default="concat")
 parser.add_argument("--legname", type=str, help="Legend description",
-                    default='LTP CNN (resnet, WS, aug3)')
+                    default='LTP CNN')
 args = parser.parse_args()
 tot_folds = args.tot_folds
 prefix = args.prefix
@@ -36,7 +33,7 @@ for f in range(tot_folds):
     # Load test data
     data = CTImageDataset(fold=f, tr_test="test", chunked_csv="data/chunked.csv")
     # Get model for the fold
-    model = load_model(prefix, f, "resnet18+dense")
+    model = load_model(prefix, f, "nominal")
 
     # Generate vector of predictions and true labels
     y_preds = dict()
@@ -79,32 +76,6 @@ else:
 y_labels_total = np.array(y_labels_total)
 y_preds_total = np.array(y_preds_total)
 
-plot_name = f"results/roc-{prefix}.png"
-results_name = f'results/res_{prefix}_totfolds_{tot_folds}.json'
-stats_from_results(y_preds_total, y_labels_total, plot_name=plot_name, results_name=results_name)
-# Ploting Receiving Operating Characteristic Curve
-# Creating true and false positive rates
-fp, tp, threshold1 = roc_curve(y_labels_total, y_preds_total)
-#
-auc, auc_cov, ci = roc_and_auc(y_preds_total, y_labels_total)
-#
-# Ploting ROC curves
-plt.subplots(1, figsize=(10, 10))
-plt.title('')
-plt.plot(fp, tp, label=f'{legname}, AUC={auc:.3f}')
-plt.plot([0, 1], ls="--", color='gray')
-plt.ylabel('Sensitivity')
-plt.xlabel('1-Specificity')
-plt.legend(loc='lower right')
-plt.savefig()
-
-
-res_dict = dict()
-res_dict['name'] = prefix
-res_dict['fp'] = fp.tolist()
-res_dict['tp'] = tp.tolist()
-res_dict['auc'] = auc
-res_dict['auc_cov'] = auc_cov
-res_dict['auc_ci'] = ci.tolist()
-with open(f'results/res_{prefix}_totfolds_{tot_folds}.json', 'w') as fout:
-    json.dump(res_dict, fout)
+output_name = f"results/roc-{prefix}.png"
+res_name = f"results/res-{prefix}.json"
+stats_from_results(y_preds_total, y_labels_total, results_name=res_name, plot_name=output_name, legname=legname)
