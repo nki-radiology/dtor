@@ -209,6 +209,33 @@ def expand_image(_img, block, stride):
     return f_img
 
 
+def resize_3D(ims,z_size,x_size,y_size):
+    
+    
+    """
+    Args: 
+        ims: imput image in an array fromat
+        z_size= size needed to be resizeed in Z direction
+        y_size= size needed to be resized in y direction
+        x_size= size needed to be resize in x direction
+    Returns: array of resized image
+    
+    """
+    
+    ims_Z=np.zeros([ims.shape[0],y_size,x_size])
+    ims_X=np.zeros([z_size,y_size,x_size])
+    
+    for z in range(0,ims.shape[0]):
+    
+        ims_Z[z,:,:]=cv2.resize(ims[z,:,:], (x_size,y_size))
+
+    for x in range(0,ims_Z.shape[2]):
+    
+        ims_X[:,:,x]=cv2.resize(ims_Z[:,:,x], (y_size,z_size))
+
+    return(ims_X)  #resized array
+
+
 def find_folds(_df):
     cols = list(_df.columns.values)
     folds = [f for f in cols if "fold" in f]
