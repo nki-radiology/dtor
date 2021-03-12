@@ -187,7 +187,7 @@ def expand_image(_img, block, stride, deform=True):
     Returns: array of blocks
 
     """
-    if defrom:
+    if deform:
         
         ims_Z=np.zeros([_img.shape[0],block[1],block[0]])
         f_img=np.zeros([block[2],block[1],block[0]])
