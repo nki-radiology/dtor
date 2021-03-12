@@ -209,7 +209,7 @@ def expand_image(_img, block, stride):
     return f_img
 
 
-def resize_3D(ims,z_size,x_size,y_size):
+def resize_3D(ims,block):
     
     
     """
@@ -221,7 +221,9 @@ def resize_3D(ims,z_size,x_size,y_size):
     Returns: array of resized image
     
     """
-    
+    x_size=block[0]
+    y_size=block[1]
+    z_size=block[2]
     ims_Z=np.zeros([ims.shape[0],y_size,x_size])
     ims_X=np.zeros([z_size,y_size,x_size])
     
