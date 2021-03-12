@@ -37,9 +37,8 @@ class CTImageDataset(Dataset):
                             fold=None, # use
                             tr_test=None, # use
                             transform=None, # use
-                            z_size=50,
-                            x_size=224,
-                            y_size=244
+                            deform=True
+                      
                             ):
         """
         Initialization
@@ -161,15 +160,11 @@ class CTImageDataset(Dataset):
             print(f"Final cropped shape is {cc_liver_post.shape}")
             print(f"Box was {a_box}")
             # Generate our (padded if necessary) chunks
-           # l_liver_post = expand_image(cc_liver_post, shape, stride)
-           # l_liver_pre = expand_image(cc_liver_pre, shape, stride)
-           # l_tumor_post = expand_image(cc_tumor_post, shape, stride)
-           # Resize images 
+            l_liver_post = expand_image(cc_liver_post, shape, stride, deform=deform)
+            l_liver_pre = expand_image(cc_liver_pre, shape, stride, deform=deform)
+            l_tumor_post = expand_image(cc_tumor_post, shape, stride, deform=deform)
             
-            l_liver_post=resize_3D(cc_liver_post,z_size,x_size,y_size)
-            l_liver_pre= resize_3D(cc_liver_pre,z_size,x_size,y_size)
-            l_tumor_post=resize_3D(cc_tumor_post,z_size,x_size,y_size)
-            
+        
             
             
             # Fill in the target dataframe
