@@ -38,8 +38,8 @@ class CTImageDataset(Dataset):
                             tr_test=None, # use
                             transform=None, # use
                             z_size=50,
-                            x_size=100,
-                            y_size=100
+                            x_size=224,
+                            y_size=244
                             ):
         """
         Initialization
