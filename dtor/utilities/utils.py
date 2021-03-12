@@ -176,7 +176,7 @@ def cutup(data, blck, strd):
     return data6
 
 
-def expand_image(_img, block, stride):
+def expand_image(_img, block, stride, deform=True):
     """
 
     Args:
@@ -187,26 +187,41 @@ def expand_image(_img, block, stride):
     Returns: array of blocks
 
     """
-    to_pad = []
-    pad = False
-    for i in range(len(_img.shape)):
-        if _img.shape[i] < block[i]:
-            pad = True
-            to_pad.append(block[i])
-        else:
-            to_pad.append(_img.shape[i])
-    if pad:
-        print(f"Enttire image must be padded: {_img.shape}, must be padded")
-        _img = pad_nd_image(_img, new_shape=to_pad)
-    a_img = view_as_windows(_img, block, step=stride)
-    f_img = a_img.reshape(-1, *a_img.shape[-3:])
+    if deform:
+        
+        ims_Z=np.zeros([_img.shape[0],block[1],block[0]])
+        f_img=np.zeros([block[2],block[1],block[0]])
+    
+        for z in range(0,_img.shape[0]):
+    
+            ims_Z[z,:,:]=cv2.resize(_img[z,:,:], (block[0],block[1]))
+
+        for x in range(0,ims_Z.shape[2]):
+    
+            f_img[:,:,x]=cv2.resize(ims_Z[:,:,x], (block[1],block[2]))
+    else:
+        
+        to_pad = []
+        pad = False
+        for i in range(len(_img.shape)):
+            if _img.shape[i] < block[i]:
+                pad = True
+                to_pad.append(block[i])
+            else:
+                to_pad.append(_img.shape[i])
+        if pad:
+            print(f"Enttire image must be padded: {_img.shape}, must be padded")
+            _img = pad_nd_image(_img, new_shape=to_pad)
+        a_img = view_as_windows(_img, block, step=stride)
+        f_img = a_img.reshape(-1, *a_img.shape[-3:])
     # Make sure blocks are padded
-    for s in f_img:
-        if s.shape != block:
-            print(f"Shape: {s.shape}, must be padded to match: {block}")
-            s = pad_nd_image(s, new_shape=block)
-            assert s.shape == block, "Padding failed"
+        for s in f_img:
+            if s.shape != block:
+                print(f"Shape: {s.shape}, must be padded to match: {block}")
+                s = pad_nd_image(s, new_shape=block)
+                assert s.shape == block, "Padding failed"
     return f_img
+
 
 
 def find_folds(_df):
