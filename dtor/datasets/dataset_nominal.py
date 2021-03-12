@@ -36,7 +36,9 @@ class CTImageDataset(Dataset):
                             chunked_csv=None, # use
                             fold=None, # use
                             tr_test=None, # use
-                            transform=None # use
+                            transform=None, # use
+                            deform=True
+                      
                             ):
         """
         Initialization
@@ -158,10 +160,13 @@ class CTImageDataset(Dataset):
             print(f"Final cropped shape is {cc_liver_post.shape}")
             print(f"Box was {a_box}")
             # Generate our (padded if necessary) chunks
-            l_liver_post = expand_image(cc_liver_post, shape, stride)
-            l_liver_pre = expand_image(cc_liver_pre, shape, stride)
-            l_tumor_post = expand_image(cc_tumor_post, shape, stride)
-
+            l_liver_post = expand_image(cc_liver_post, shape, stride, deform=deform)
+            l_liver_pre = expand_image(cc_liver_pre, shape, stride, deform=deform)
+            l_tumor_post = expand_image(cc_tumor_post, shape, stride, deform=deform)
+            
+        
+            
+            
             # Fill in the target dataframe
             d_tmp = dict()
             for f in range(tot_folds):
