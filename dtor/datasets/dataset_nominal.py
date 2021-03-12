@@ -8,7 +8,7 @@ import os
 from torch.utils.data import Dataset
 import pathlib
 import numpy as np
-from dtor.utilities.utils import cutup, pad_nd_image, expand_image,resize_3D
+from dtor.utilities.utils import cutup, pad_nd_image, expand_image
 from dtor.utilities.utils import bbox3d, crop3d
 from tqdm import tqdm
 from tqdm.contrib import tzip
