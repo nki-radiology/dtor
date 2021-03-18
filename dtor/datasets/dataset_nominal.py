@@ -8,7 +8,7 @@ import os
 from torch.utils.data import Dataset
 import pathlib
 import numpy as np
-from dtor.utilities.utils import cutup, pad_nd_image, expand_image
+from dtor.utilities.utils import cutup, pad_nd_image, expand_image,removeOutliers
 from dtor.utilities.utils import bbox3d, crop3d
 from tqdm import tqdm
 from tqdm.contrib import tzip
@@ -156,6 +156,7 @@ class CTImageDataset(Dataset):
             cc_tumor_post = crop3d(c_tumor_post, a_box)
             cc_liver_post = crop3d(liver_post, a_box)
             cc_liver_pre = crop3d(liver_pre, a_box)
+            cc_liver_pre=removeOutliers(cc_liver_pre)
 
             print(f"Final cropped shape is {cc_liver_post.shape}")
             print(f"Box was {a_box}")
@@ -163,7 +164,7 @@ class CTImageDataset(Dataset):
             l_liver_post = expand_image(cc_liver_post, shape, stride, deform=deform)
             l_liver_pre = expand_image(cc_liver_pre, shape, stride, deform=deform)
             l_tumor_post = expand_image(cc_tumor_post, shape, stride, deform=deform)
-            
+
         
             
             
@@ -175,6 +176,7 @@ class CTImageDataset(Dataset):
             for _l in tzip(l_liver_post, l_liver_pre, l_tumor_post):
                 f_post, f_pre, f_tumor = _l
                 if any([np.sum(f_post) < 0.1, np.sum(f_pre) < 0.1, np.sum(f_tumor) < 1.0]):
+                    print (f"{np.sum(f_post)}_{np.sum(f_pre)}_{np.sum(f_tumor)}")
                     continue
                 d_data["patient"].append(patient)
                 d_data["abl"].append(abl)
