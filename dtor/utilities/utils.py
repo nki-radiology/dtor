@@ -176,6 +176,18 @@ def cutup(data, blck, strd):
     return data6
 
 
+
+def removeOutliers(_img):
+
+    """
+    Args: 
+        _img: numy array
+    """
+    _img[_img <-1000] = 0
+    
+    return _img
+   
+
 def expand_image(_img, block, stride, deform=True):
     """
 
@@ -189,6 +201,7 @@ def expand_image(_img, block, stride, deform=True):
     """
     if deform:
         
+        _img=_img.astype('float32')
         ims_Z=np.zeros([_img.shape[0],block[1],block[0]])
         f_img=np.zeros([block[2],block[1],block[0]])
     
@@ -199,6 +212,8 @@ def expand_image(_img, block, stride, deform=True):
         for x in range(0,ims_Z.shape[2]):
     
             f_img[:,:,x]=cv2.resize(ims_Z[:,:,x], (block[1],block[2]))
+        
+        f_img=[f_img] 
     else:
         
         to_pad = []
