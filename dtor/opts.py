@@ -92,6 +92,12 @@ def init_parser():
                         nargs='?',
                         default="",
                         )
+    parser.add_argument('--dim',
+                        help="Dimensions of input data",
+                        type=int,
+                        nargs='?',
+                        default=3,
+                        )
     return parser
 
 

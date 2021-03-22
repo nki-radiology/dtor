@@ -37,7 +37,8 @@ class CTImageDataset(Dataset):
                             chunked_csv=None, # use
                             fold=None, # use
                             tr_test=None, # use
-                            transform=None # use 
+                            transform=None, # use
+                            dim=3
                             ):
         """
         Initialization
@@ -59,6 +60,8 @@ class CTImageDataset(Dataset):
         self.transform = transform
         self.buffer = buffer
         self.deform = deform
+        self.dim = dim
+
         if chunked_csv:
             self.chunked_images = pd.read_csv(chunked_csv, sep="\t")
             # Restrict by fold + train/test
@@ -91,6 +94,11 @@ class CTImageDataset(Dataset):
         weight = self.chunked_images.loc[idx, 'weight']
         image = np.load(fname)
         image = torch.from_numpy(image).to(torch.float32)
+
+        if self.dim == 2:
+            counts = [np.sum(s) for s in image[2, :, :, :]]
+            _slice = np.argmax(counts)
+            image = image[:, _slice, :, :]
 
         if self.transform:
             image = self.transform(image)

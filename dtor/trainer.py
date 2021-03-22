@@ -77,10 +77,10 @@ class TrainerBase:
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
 
-    def init_model(self):
+    def init_model(self, sample=None):
         return NotImplementedError
 
-    def init_data(self, fold):
+    def init_data(self, fold, mean=None, std=None):
         return NotImplementedError
 
     def init_optimizer(self):
@@ -140,7 +140,7 @@ class TrainerBase:
             # Get a sample batch
             sample = []
             for n, point in enumerate(train_dl):
-                if n==10:
+                if n == 10:
                     break
                 x = point[0]
                 sample.append(x)
@@ -154,6 +154,13 @@ class TrainerBase:
             self.model = self.init_model(sample=sample)
             self.totalTrainingSamples_count = 0
             self.optimizer = self.init_optimizer()
+
+            # If model is using cnn_finetune, we need to update the transform with the new
+            # mean and std deviation values
+            if hasattr(self.model, "original_model_info"):
+                mean = self.model.original_model_info.mean
+                std = self.model.original_model_info.std
+                train_ds, val_ds, train_dl, val_dl = self.init_data(fold, mean=mean, std=std)
 
             for epoch_ndx in range(1, self.cli_args.epochs + 1):
                 log.info("FOLD {}, Epoch {} of {}, {}/{} batches of size {}*{}".format(
@@ -399,11 +406,15 @@ class Trainer(TrainerBase):
             model = model.to(self.device)
         return model
 
-    def init_data(self, fold):
+    def init_data(self, fold, mean=None, std=None):
         aug = False
         if self.cli_args.augments > 0:
             aug = True
-        train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug)
+        if mean:
+            train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
+                                        mean=mean, std=std)
+        else:
+            train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug)
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
 
