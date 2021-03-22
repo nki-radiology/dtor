@@ -402,6 +402,8 @@ class Trainer(TrainerBase):
             model = model_choice(self.cli_args.model, resume=self.cli_args.resume, sample=sample)
         elif self.cli_args.pretrain_loc:
             model = model_choice(self.cli_args.model, pretrain_loc=self.cli_args.pretrain_loc, sample=sample)
+        elif self.cli_args.pretrained_2d_name:
+            model = model_choice(self.cli_args.model, pretrained_2d_name=self.cli_args.pretrained_2d_name)
         else:
             model = model_choice(self.cli_args.model, sample=sample)
 

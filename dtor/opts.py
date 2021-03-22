@@ -92,6 +92,12 @@ def init_parser():
                         nargs='?',
                         default="",
                         )
+    parser.add_argument('--pretrained_2d_name',
+                        help="Which 2d pretrained model to use",
+                        type=str,
+                        nargs='?',
+                        default="",
+                        )
     parser.add_argument('--dim',
                         help="Dimensions of input data",
                         type=int,

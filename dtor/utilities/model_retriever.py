@@ -16,8 +16,8 @@ from cnn_finetune import make_model
 import torch.nn as nn
 
 
-def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None):
-    assert m_name in ["inceptionresnetv2", "nominal", "resnet18", "resnet18+dense", "nominal_mnist", "unet"]
+def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, pretrained_2d_name=None):
+    assert m_name in ["pretrained_2d", "nominal", "resnet18", "resnet18+dense", "nominal_mnist", "unet"]
 
     if m_name == "nominal":
         model = Model()
@@ -29,8 +29,8 @@ def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None):
     elif m_name == "resnet18+dense":
         modela = r3d_18(pretrained=True, progress=True)
         model = ModelB(modela, base_output_shape=classifier_shape(modela, sample))
-    elif m_name == 'inceptionresnetv2':
-        model = make_model('inceptionresnetv2', num_classes=2, pretrained=True, input_size=(224, 224),
+    elif m_name == 'pretrained_2d':
+        model = make_model(pretrained_2d_name, num_classes=2, pretrained=True, input_size=(224, 224),
                            classifier_factory=make_classifier)
     elif m_name == "unet":
         modela = UNet(1, [32, 48, 64, 96, 128], 3, net_mode='3d', conv_block=RecombinationBlock)
