@@ -160,6 +160,8 @@ class TrainerBase:
             if hasattr(self.model, "original_model_info"):
                 mean = self.model.original_model_info.mean
                 std = self.model.original_model_info.std
+                log.info('*******************USING PRETRAINED MODEL*********************')
+                log.info(f"preprocessing mean: {mean}, std: {std}")
                 train_ds, val_ds, train_dl, val_dl = self.init_data(fold, mean=mean, std=std)
 
             for epoch_ndx in range(1, self.cli_args.epochs + 1):
@@ -267,7 +269,11 @@ class TrainerBase:
         label_g = label_t.to(self.device, non_blocking=True)
 
         input_g=input_g.float()
-        logits_g, probability_g = self.model(input_g)
+        if self.cli_args.dim == 2:
+            logits_g = self.model(input_g)
+            probability_g = nn.Softmax(dim=1)(logits_g)
+        else:
+            logits_g, probability_g = self.model(input_g)
 
         if "dice" in self.cli_args.loss.lower():
             loss_func = DiceLoss(classes=3)
@@ -412,9 +418,10 @@ class Trainer(TrainerBase):
             aug = True
         if mean:
             train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
-                                        mean=mean, std=std)
+                                        mean=mean, std=std, dim=self.cli_args.dim)
         else:
-            train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug)
+            train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
+                    dim=self.cli_args.dim)
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
 
