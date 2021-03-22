@@ -14,13 +14,13 @@ log.setLevel(logging.DEBUG)
 
 
 class Model(nn.Module):
-    def __init__(self, in_channels=3, conv_channels=8, prelim=65536): # (64 for MNIST 3D)
+    def __init__(self, in_channels=3, conv_channels=8, prelim=65536): #65536): # (64 for MNIST 3D)
         super().__init__()
 
         self.tail_batchnorm = nn.BatchNorm3d(in_channels)
 
-        self.block1 = LTPBlock(in_channels, conv_channels)
-        self.block2 = LTPBlock(conv_channels, conv_channels * 2)
+        self.block1 = LTPBlock(in_channels, conv_channels * 2)
+        #self.block2 = LTPBlock(conv_channels, conv_channels * 2)
         #self.block3 = LTPBlock(conv_channels * 2, conv_channels * 4)
         #self.block4 = LTPBlock(conv_channels * 4, conv_channels * 8)
 
@@ -54,7 +54,7 @@ class Model(nn.Module):
 
         block_out = self.block1(bn_output)
         #print(block_out.shape)
-        block_out = self.block2(block_out)
+        #block_out = self.block2(block_out)
         #print(block_out.shape)
         #block_out = self.block3(block_out)
         #print(block_out.shape)
@@ -84,7 +84,8 @@ class LTPBlock(nn.Module):
         )
         self.relu2 = nn.ReLU(inplace=True)
 
-        self.maxpool = nn.MaxPool3d(2, 2)
+        #self.maxpool = nn.MaxPool3d(2, 2)
+        self.maxpool = nn.MaxPool3d(4, 4)
 
     def forward(self, input_batch):
         block_out = self.conv1(input_batch)

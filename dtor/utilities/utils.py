@@ -11,6 +11,7 @@ import torch
 from torchvision import transforms
 import matplotlib.pylab as pylab
 import PIL
+import cv2
 
 
 def image_search(inlist, filename, debug=False):
