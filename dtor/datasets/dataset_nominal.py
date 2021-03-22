@@ -33,12 +33,11 @@ class CTImageDataset(Dataset):
                             buffer=10, # create
                             tot_folds=3, # create
                             label="L_LTP_date", # create
+                            deform=True, # create
                             chunked_csv=None, # use
                             fold=None, # use
                             tr_test=None, # use
-                            transform=None, # use
-                            deform=True
-                      
+                            transform=None # use 
                             ):
         """
         Initialization
@@ -59,6 +58,7 @@ class CTImageDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.buffer = buffer
+        self.deform = deform
         if chunked_csv:
             self.chunked_images = pd.read_csv(chunked_csv, sep="\t")
             # Restrict by fold + train/test
@@ -161,9 +161,9 @@ class CTImageDataset(Dataset):
             print(f"Final cropped shape is {cc_liver_post.shape}")
             print(f"Box was {a_box}")
             # Generate our (padded if necessary) chunks
-            l_liver_post = expand_image(cc_liver_post, shape, stride, deform=deform)
-            l_liver_pre = expand_image(cc_liver_pre, shape, stride, deform=deform)
-            l_tumor_post = expand_image(cc_tumor_post, shape, stride, deform=deform)
+            l_liver_post = expand_image(cc_liver_post, shape, stride, deform=self.deform)
+            l_liver_pre = expand_image(cc_liver_pre, shape, stride, deform=self.deform)
+            l_tumor_post = expand_image(cc_tumor_post, shape, stride, deform=self.deform)
 
         
             

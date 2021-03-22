@@ -139,9 +139,12 @@ class TrainerBase:
 
             # Get a sample batch
             sample = []
-            for n in range(10):
-                sample.append(train_dl[n][0])
-            sample = torch.cat(sample, dim=1)
+            for n, point in enumerate(train_dl):
+                if n==10:
+                    break
+                x = point[0]
+                sample.append(x)
+            sample = torch.cat(sample, dim=0)
 
             # Generate weights
             self.weights = get_class_weights(train_ds)

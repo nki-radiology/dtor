@@ -3,7 +3,7 @@ import torch.nn as nn
 
 
 class ModelBSingle(nn.Module):
-    def __init__(self, inmodel, base_output_shape=1806336, output_classes=2, fix_inmodel=True):
+    def __init__(self, inmodel, base_output_shape=2359296, output_classes=2, fix_inmodel=True):
         super(ModelBSingle, self).__init__()
         self.modelA = inmodel
 
@@ -11,8 +11,8 @@ class ModelBSingle(nn.Module):
             for param in self.modelA.parameters():
                 param.requires_grad = False
         
-        self.block1 = nn.Linear(base_output_shape, 50)
-        self.classifier = nn.Linear(50, output_classes)
+        #self.block1 = nn.Linear(base_output_shape, 50)
+        self.classifier = nn.Linear(base_output_shape, output_classes)
         self.head_softmax = nn.Softmax(dim=1)
         
     def forward(self, x):
@@ -26,7 +26,7 @@ class ModelBSingle(nn.Module):
             -1,
         )
         #print(conv_flat.shape)
-        x = self.block1(conv_flat)
-        x = self.classifier(x)
+        #x = self.block1(conv_flat)
+        x = self.classifier(conv_flat)
         
         return x, self.head_softmax(x)
