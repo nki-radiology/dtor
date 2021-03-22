@@ -134,17 +134,23 @@ class TrainerBase:
             log.info(f'FOLD {fold}')
             log.info('--------------------------------')
 
-            # Model
-            self.model = self.init_model()
-            self.totalTrainingSamples_count = 0
-            self.optimizer = self.init_optimizer()
-
             # Data
             train_ds, val_ds, train_dl, val_dl = self.init_data(fold)
+
+            # Get a sample batch
+            sample = []
+            for n in range(10):
+                sample.append(train_dl[n][0])
+            sample = torch.cat(sample, dim=1)
 
             # Generate weights
             self.weights = get_class_weights(train_ds)
             self.weights = self.weights.to(self.device)
+
+            # Model
+            self.model = self.init_model(sample=sample)
+            self.totalTrainingSamples_count = 0
+            self.optimizer = self.init_optimizer()
 
             for epoch_ndx in range(1, self.cli_args.epochs + 1):
                 log.info("FOLD {}, Epoch {} of {}, {}/{} batches of size {}*{}".format(
@@ -375,13 +381,13 @@ class Trainer(TrainerBase):
     def __init__(self):
         super().__init__()
 
-    def init_model(self):
+    def init_model(self, sample=None):
         if self.cli_args.resume:
-            model = model_choice(self.cli_args.model, resume=self.cli_args.resume)
+            model = model_choice(self.cli_args.model, resume=self.cli_args.resume, sample=sample)
         elif self.cli_args.pretrain_loc:
-            model = model_choice(self.cli_args.model, pretrain_loc=self.cli_args.pretrain_loc)
+            model = model_choice(self.cli_args.model, pretrain_loc=self.cli_args.pretrain_loc, sample=sample)
         else:
-            model = model_choice(self.cli_args.model)
+            model = model_choice(self.cli_args.model, sample=sample)
 
         if self.use_cuda:
             log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
