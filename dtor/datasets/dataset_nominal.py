@@ -93,13 +93,15 @@ class CTImageDataset(Dataset):
         label = self.chunked_images.loc[idx, 'label']
         weight = self.chunked_images.loc[idx, 'weight']
         image = np.load(fname)
-        image = torch.from_numpy(image).to(torch.float32)
 
         if self.dim == 2:
-            counts = [np.sum(s) for s in image[2, :, :, :]]
+            image_l = np.moveaxis(image, -1, 0)
+            counts = [np.sum(s[2, :, :]) for s in image_l]
             _slice = np.argmax(counts)
-            image = image[:, _slice, :, :]
-
+            image = image[:, :, :, _slice]
+        
+        image = torch.from_numpy(image).to(torch.float32)
+        
         if self.transform:
             image = self.transform(image)
 

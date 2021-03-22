@@ -30,7 +30,8 @@ class ConvertDCHWtoCDHW(nn.Module):
 
 def get_data(name, csv_loc=None, fold=None, aug=False,
              mean=(0.43216, 0.394666, 0.37645),
-             std=(0.22803, 0.22145, 0.216989)):
+             std=(0.22803, 0.22145, 0.216989),
+             dim=3):
     """
     Helper function for datasets
     Args:
@@ -50,13 +51,13 @@ def get_data(name, csv_loc=None, fold=None, aug=False,
         val_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5", tr_test="test")
     else:
         # Do not throw randomised transforms in for the case of evaluation
-        tr_eval = transforms.Compose([
+        tr_eval = [
             ConvertCDHWtoDCHW(),
             transforms.ConvertImageDtype(torch.float32),
             transforms.Normalize(mean=mean, std=std),
             ConvertDCHWtoCDHW()
-            ])
-        tr_aug = transforms.Compose([
+            ]
+        tr_aug = [
             ConvertCDHWtoDCHW(),
             transforms.RandomAffine(0),
             transforms.GaussianBlur(3),
@@ -64,17 +65,26 @@ def get_data(name, csv_loc=None, fold=None, aug=False,
             transforms.ConvertImageDtype(torch.float32),
             transforms.Normalize(mean=mean, std=std),
             ConvertDCHWtoCDHW()
-        ])
+        ]
+
+        if dim == 2:
+            tr_eval = tr_eval[1:-1]
+            tr_aug = tr_aug[1:-1]
+        
+        tr_eval = transforms.Compose(tr_eval)
+        tr_aug = transforms.Compose(tr_aug)
 
         train_ds = CTImageDataset(chunked_csv=csv_loc,
                                   fold=fold,
                                   tr_test="train",
-                                  transform=tr_aug if aug else tr_eval
+                                  transform=tr_aug if aug else tr_eval,
+                                  dim=dim
                                   )
         val_ds = CTImageDataset(chunked_csv=csv_loc,
                                 fold=fold,
                                 tr_test="test",
-                                transform=tr_eval
+                                transform=tr_eval,
+                                dim=dim
                                 )
 
     return train_ds, val_ds

@@ -17,10 +17,7 @@ import torch.nn as nn
 
 
 def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None):
-    assert m_name in ["nominal", "resnet18", "resnet18+dense", "nominal_mnist", "unet"]
-
-    if "nominal" not in m_name:
-        assert sample, "Sample needed for classifier shape initialisation"
+    assert m_name in ["inceptionresnetv2", "nominal", "resnet18", "resnet18+dense", "nominal_mnist", "unet"]
 
     if m_name == "nominal":
         model = Model()
