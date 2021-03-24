@@ -399,14 +399,10 @@ class Trainer(TrainerBase):
         super().__init__()
 
     def init_model(self, sample=None):
-        if self.cli_args.resume:
-            model = model_choice(self.cli_args.model, resume=self.cli_args.resume, sample=sample)
-        elif self.cli_args.pretrain_loc:
-            model = model_choice(self.cli_args.model, pretrain_loc=self.cli_args.pretrain_loc, sample=sample)
-        elif self.cli_args.pretrained_2d_name:
-            model = model_choice(self.cli_args.model, pretrained_2d_name=self.cli_args.pretrained_2d_name)
-        else:
-            model = model_choice(self.cli_args.model, sample=sample)
+        model = model_choice(self.cli_args.model, 
+                resume=self.cli_args.resume, sample=sample,
+                pretrain_loc=self.cli_args.pretrain_loc,
+                pretrained_2d_name=self.cli_args.pretrained_2d_name)
 
         if self.use_cuda:
             log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
