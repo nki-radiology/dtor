@@ -157,9 +157,10 @@ class TrainerBase:
 
             # If model is using cnn_finetune, we need to update the transform with the new
             # mean and std deviation values
-            if hasattr(self.model, "original_model_info"):
-                mean = self.model.original_model_info.mean
-                std = self.model.original_model_info.std
+            dpm = self.model if not self.use_cuda else self.model.module
+            if hasattr(dpm, "original_model_info"):
+                mean = dpm.original_model_info.mean
+                std = dpm.original_model_info.std
                 log.info('*******************USING PRETRAINED MODEL*********************')
                 log.info(f"preprocessing mean: {mean}, std: {std}")
                 train_ds, val_ds, train_dl, val_dl = self.init_data(fold, mean=mean, std=std)
