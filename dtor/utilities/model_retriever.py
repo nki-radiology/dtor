@@ -47,7 +47,7 @@ def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, 
     return model
 
 
-def load_model(prefix, fold, model_type="nominal", full_name=None):
+def load_model(prefix, fold, model_type="nominal", full_name=None, sample=None):
     """
 
     Args:
@@ -63,7 +63,7 @@ def load_model(prefix, fold, model_type="nominal", full_name=None):
     if full_name:
         model_name = full_name
     print(f"Loading model {model_name}")
-    _model = model_choice(model_type)
+    _model = model_choice(model_type, sample=sample)
     _model = safe_restore(_model, model_name)
     return _model
 
