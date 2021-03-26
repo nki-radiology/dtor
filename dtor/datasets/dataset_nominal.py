@@ -95,10 +95,10 @@ class CTImageDataset(Dataset):
         image = np.load(fname)
 
         if self.dim == 2:
-            image_l = np.moveaxis(image, -1, 0)
+            image_l = np.moveaxis(image, 1, 0)
             counts = [np.sum(s[2, :, :]) for s in image_l]
             _slice = np.argmax(counts)
-            image = image[:, :, :, _slice]
+            image = image[:, _slice, :, :]
         
         image = torch.from_numpy(image).to(torch.float32)
         
@@ -201,7 +201,10 @@ class CTImageDataset(Dataset):
 
                 fname = sub_name(point_counter, patient, abl)
                 data = np.stack((f_post, f_pre, f_tumor), axis=-1)
+                print(f"shape before: {data.shape}")
                 data = np.moveaxis(data, -1, 0)
+                data = np.moveaxis(data, -1, 1)
+                print(f"shape after: {data.shape}")
                 np.save(fname, data)
                 d_data["filename"].append(fname)
                 point_counter += 1

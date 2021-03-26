@@ -157,7 +157,11 @@ class TrainerBase:
 
             # If model is using cnn_finetune, we need to update the transform with the new
             # mean and std deviation values
-            dpm = self.model if not self.use_cuda else self.model.module
+            try:
+                dpm = self.model if not self.use_cuda else self.model.module
+            except nn.modules.module.ModuleAttributeError:
+                dpm = self.model
+
             if hasattr(dpm, "original_model_info"):
                 mean = dpm.original_model_info.mean
                 std = dpm.original_model_info.std
