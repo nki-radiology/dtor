@@ -29,6 +29,7 @@ from dtor.utilities.utils import find_folds, get_class_weights
 from dtor.utilities.model_retriever import model_choice
 from dtor.utilities.data_retriever import get_data
 from dtor.opts import init_parser
+from dtor.opts import norms
 
 log = logging.getLogger(__name__)
 # log.setLevel(logging.WARN)
@@ -135,7 +136,8 @@ class TrainerBase:
             log.info('--------------------------------')
 
             # Data
-            train_ds, val_ds, train_dl, val_dl = self.init_data(fold)
+            mean, std = norms[self.cli_args.norm]
+            train_ds, val_ds, train_dl, val_dl = self.init_data(fold, mean=mean, std=std)
 
             # Get a sample batch
             sample = []
@@ -166,8 +168,10 @@ class TrainerBase:
                 mean = dpm.original_model_info.mean
                 std = dpm.original_model_info.std
                 log.info('*******************USING PRETRAINED MODEL*********************')
-                log.info(f"preprocessing mean: {mean}, std: {std}")
                 train_ds, val_ds, train_dl, val_dl = self.init_data(fold, mean=mean, std=std)
+
+            log.info('*******************NORMALISATION DETAILS*********************')
+            log.info(f"preprocessing mean: {mean}, std: {std}")
 
             for epoch_ndx in range(1, self.cli_args.epochs + 1):
                 log.info("FOLD {}, Epoch {} of {}, {}/{} batches of size {}*{}".format(

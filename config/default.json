@@ -10,5 +10,6 @@
   "dset": "mnist3d",
   "datapoints": "",
   "load_json": "",
-  "augments": 3
+  "augments": 3,
+  "norm": "torchvision_3d"
 }
