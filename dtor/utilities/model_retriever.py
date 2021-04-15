@@ -14,6 +14,7 @@ from torchvision.models.video import r3d_18
 from dtor.utilities.utils import safe_restore
 from cnn_finetune import make_model
 import torch.nn as nn
+import torch
 
 
 def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, pretrained_2d_name=None):
@@ -28,7 +29,8 @@ def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, 
         model, _ = generate_model(opt)
     elif m_name == "resnet18+dense":
         modela = r3d_18(pretrained=True, progress=True)
-        model = ModelB(modela, base_output_shape=classifier_shape(modela, sample))
+        shape = classifier_shape(modela, sample)
+        model = ModelB(modela, base_output_shape=shape, fix_inmodel=False)
     elif m_name == 'pretrained_2d':
         model = make_model(pretrained_2d_name, num_classes=2, pretrained=True, input_size=(214, 214),
                            classifier_factory=make_classifier)
@@ -69,6 +71,10 @@ def load_model(prefix, fold, model_type="nominal", full_name=None, sample=None):
 
 
 def classifier_shape(_model, _sample):
+    use_cuda = torch.cuda.is_available()
+    device = torch.device("cuda" if use_cuda else "cpu")
+    _model.to(device)
+    _sample = _sample.to(device)
     x = _model(_sample)
     conv_flat = x.view(
         x.size(0),

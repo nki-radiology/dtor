@@ -142,20 +142,24 @@ class TrainerBase:
             # Get a sample batch
             sample = []
             for n, point in enumerate(train_dl):
-                if n == 10:
+                if n == 2:
                     break
                 x = point[0]
                 sample.append(x)
             sample = torch.cat(sample, dim=0)
 
             # Generate weights
+            log.info('Calculating class weights')
             self.weights = get_class_weights(train_ds)
             self.weights = self.weights.to(self.device)
 
             # Model
+            log.info('Initializing model')
             self.model = self.init_model(sample=sample)
+            log.info('Model initialized')
             self.totalTrainingSamples_count = 0
             self.optimizer = self.init_optimizer()
+            log.info('Optimizer initialized')
 
             # If model is using cnn_finetune, we need to update the transform with the new
             # mean and std deviation values
@@ -165,9 +169,9 @@ class TrainerBase:
                 dpm = self.model
 
             if hasattr(dpm, "original_model_info"):
+                log.info('*******************USING PRETRAINED MODEL*********************')
                 mean = dpm.original_model_info.mean
                 std = dpm.original_model_info.std
-                log.info('*******************USING PRETRAINED MODEL*********************')
                 train_ds, val_ds, train_dl, val_dl = self.init_data(fold, mean=mean, std=std)
 
             log.info('*******************NORMALISATION DETAILS*********************')
