@@ -14,7 +14,7 @@ log.setLevel(logging.DEBUG)
 
 
 class Model(nn.Module):
-    def __init__(self, in_channels=3, conv_channels=8, prelim=65536): #65536): # (64 for MNIST 3D)
+    def __init__(self, in_channels=3, conv_channels=8, prelim=65536, dry=False): #65536): # (64 for MNIST 3D)
         super().__init__()
 
         self.tail_batchnorm = nn.BatchNorm3d(in_channels)
@@ -26,7 +26,7 @@ class Model(nn.Module):
 
         self.head_linear = nn.Linear(prelim, 2)
         self.head_softmax = nn.Softmax(dim=1)
-
+        self.dry = dry
         self._init_weights()
 
     def _init_weights(self):
@@ -66,6 +66,8 @@ class Model(nn.Module):
             -1,
         )
         #print(conv_flat.shape)
+        if self.dry:
+            return block_out
         linear_output = self.head_linear(conv_flat)
 
         return linear_output, self.head_softmax(linear_output)
