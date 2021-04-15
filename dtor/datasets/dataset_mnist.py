@@ -36,12 +36,13 @@ class MNIST3DDataset(Dataset):
     Dataset from 3D MNIST point cloud for testing
     """
 
-    def __init__(self, h5_file, tr_test=None):
+    def __init__(self, h5_file, tr_test=None, transform=None):
         """
         Initialization
 
         :param h5_file: data location
         :param tr_test: train or test subset
+        :param transform: transform
         """
 
         with h5py.File(h5_file, "r") as hf:
@@ -53,11 +54,16 @@ class MNIST3DDataset(Dataset):
         self.X, self.y = data_transform(self.X, self.y) 
         print(f"Kept {self.y.shape} data points")
 
+        self.transform = transform
+
     def __len__(self):
         return self.y.size
 
     def __getitem__(self, idx):
         if torch.is_tensor(idx):
             idx = idx.tolist()
+        image = self.X[idx]
+        if self.transform:
+            image = self.transform(image)
 
-        return [self.X[idx], self.y[idx], 0]
+        return [image, self.y[idx], 0]
