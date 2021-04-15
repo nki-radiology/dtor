@@ -61,6 +61,7 @@ class MNIST3DDataset(Dataset):
         if torch.is_tensor(idx):
             idx = idx.tolist()
         image = self.X[idx]
+        image = torch.from_numpy(image).to(torch.float32)
         if self.transform:
             image = self.transform(image)
 
