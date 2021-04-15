@@ -17,12 +17,12 @@ import torch.nn as nn
 
 
 def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, pretrained_2d_name=None):
-    assert m_name in ["pretrained_2d", "nominal", "resnet18", "resnet18+dense", "nominal_mnist", "unet"]
+    assert m_name in ["pretrained_2d", "nominal", "resnet18", "resnet18+dense", "unet"]
 
     if m_name == "nominal":
-        model = Model()
-    elif m_name == "nominal_mnist":
-        model = Model(prelim=64)
+        model_dry = Model(dry=True)
+        prelim = classifier_shape(model_dry, sample)
+        model = Model(prelim=prelim)
     elif m_name == "resnet18":
         opt = ResNetOptions("settings/resnet10.json")
         model, _ = generate_model(opt)
