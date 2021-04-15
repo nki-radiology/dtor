@@ -142,7 +142,7 @@ class TrainerBase:
             # Get a sample batch
             sample = []
             for n, point in enumerate(train_dl):
-                if n == 2:
+                if n == 1:
                     break
                 x = point[0]
                 sample.append(x)
