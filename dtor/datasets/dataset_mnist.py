@@ -11,13 +11,11 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-@staticmethod
 def array_to_color(array, cmap="Oranges"):
     s_m = plt.cm.ScalarMappable(cmap=cmap)
     return s_m.to_rgba(array)[:, :-1]
 
 
-@staticmethod
 def data_transform(data, labels, req=[0, 1]):
     data_t = []
     label_t = []
