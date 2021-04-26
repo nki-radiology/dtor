@@ -85,7 +85,11 @@ class TrainerBase:
         return NotImplementedError
 
     def init_optimizer(self):
-        return Adam(self.model.parameters(), lr=0.0001)
+        optim = Adam(self.model.parameters(), lr=self.cli_args.learnRate)
+        decay = self.cli_args.decay
+        if decay < 1.0:
+            optim = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=decay)
+        return optim
 
     def init_loaders(self, train_ds, val_ds):
         batch_size = self.cli_args.batch_size
