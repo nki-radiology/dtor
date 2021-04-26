@@ -245,9 +245,9 @@ class TrainerBase:
                     )
 
                     loss_var.backward()
+                    self.optimizer.step()
                     if self.scheduler:
                         self.scheduler.step()
-                    self.optimizer.step()
             else:
                 self.optimizer.zero_grad()
                 loss_var = self.compute_batch_loss(
@@ -258,9 +258,9 @@ class TrainerBase:
                 )
 
                 loss_var.backward()
+                self.optimizer.step()
                 if self.scheduler:
                     self.scheduler.step()
-                self.optimizer.step()
 
         self.totalTrainingSamples_count += len(train_dl.dataset)
 
