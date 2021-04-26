@@ -20,7 +20,8 @@ import torch.nn as nn
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-from torchgeometry.losses.focal import FocalLoss
+from dtor.utilities.utils import focal_loss
+import torch.nn.functional as F
 
 from dtor.loss.diceloss import DiceLoss
 from dtor.logconf import enumerate_with_estimate
@@ -88,6 +89,7 @@ class TrainerBase:
     def init_optimizer(self):
         optim = Adam(self.model.parameters(), lr=self.cli_args.learnRate)
         decay = self.cli_args.decay
+        scheduler = None
         if decay < 1.0:
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=decay)
         return optim, scheduler
@@ -297,17 +299,16 @@ class TrainerBase:
         else:
             logits_g, probability_g = self.model(input_g)
 
+        CE = nn.CrossEntropyLoss(reduction='none', weight = self.weights)
         if "focal" in self.cli_args.loss.lower():
             loss_string = self.cli_args.loss
             parts = loss_string.split("_")
             assert len(parts) == 3, "Focal loss requires 'focal_ALPHA_BETA' formatting"
             alpha = float(parts[1])
             gamma = float(parts[2])
-            loss_func = FocalLoss(alpha=alpha, gamma=gamma)
+            loss_g = focal_loss(CE, label_g, gamma, alpha)
         else:
-            loss_func = nn.CrossEntropyLoss(reduction='none', weight = self.weights)
-
-        loss_g = loss_func(logits_g, label_g)
+            loss_g = CE(logits_g, label_g)
         
         start_ndx = batch_ndx * batch_size
         end_ndx = start_ndx + label_t.size(0)

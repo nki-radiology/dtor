@@ -340,3 +340,19 @@ def find_mean_std(dl):
                     else:
                         statistics += Stats(to_pil(_image))
     print(f'mean:{statistics.mean}, std:{statistics.stddev}')
+
+
+def focal_loss(bce_loss, targets, gamma, alpha):
+    """Binary focal loss, mean.
+
+    Per https://discuss.pytorch.org/t/is-this-a-correct-implementation-for-focal-loss-in-pytorch/43327/5 with
+    improvements for alpha.
+    :param bce_loss: Binary Cross Entropy loss, a torch tensor.
+    :param targets: a torch tensor containing the ground truth, 0s and 1s.
+    :param gamma: focal loss power parameter, a float scalar.
+    :param alpha: weight of the class indicated by 1, a float scalar.
+    """
+    p_t = torch.exp(-bce_loss)
+    alpha_tensor = (1 - alpha) + targets * (2 * alpha - 1)  # alpha if target = 1 and 1 - alpha if target = 0
+    f_loss = alpha_tensor * (1 - p_t) ** gamma * bce_loss
+    return f_loss
