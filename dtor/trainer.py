@@ -306,7 +306,7 @@ class TrainerBase:
             assert len(parts) == 3, "Focal loss requires 'focal_ALPHA_BETA' formatting"
             alpha = float(parts[1])
             gamma = float(parts[2])
-            loss_g = focal_loss(CE, label_g, gamma, alpha)
+            loss_g = focal_loss(CE(logits_g, label_g), label_g, gamma, alpha)
         else:
             loss_g = CE(logits_g, label_g)
         
