@@ -20,7 +20,7 @@ import torch.nn as nn
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-import torchvision.models as tv_models
+from torchgeometry.losses.focal import FocalLoss
 
 from dtor.loss.diceloss import DiceLoss
 from dtor.logconf import enumerate_with_estimate
@@ -288,8 +288,13 @@ class TrainerBase:
         else:
             logits_g, probability_g = self.model(input_g)
 
-        if "dice" in self.cli_args.loss.lower():
-            loss_func = DiceLoss(classes=3)
+        if "focal" in self.cli_args.loss.lower():
+            loss_string = self.cli_args.loss
+            parts = loss_string.split("_")
+            assert len(parts) == 3, "Focal loss requires 'focal_ALPHA_BETA' formatting"
+            alpha = float(parts[1])
+            gamma = float(parts[2])
+            loss_func = FocalLoss(alpha=alpha, gamma=gamma)
         else:
             loss_func = nn.CrossEntropyLoss(reduction='none', weight = self.weights)
 
