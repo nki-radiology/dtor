@@ -54,6 +54,7 @@ class TrainerBase:
         self.trn_writer = None
         self.val_writer = None
         self.optimizer = None
+        self.scheduler = None
         self.root_dir = os.environ["DTORROOT"]
 
         parser = init_parser()
@@ -88,8 +89,8 @@ class TrainerBase:
         optim = Adam(self.model.parameters(), lr=self.cli_args.learnRate)
         decay = self.cli_args.decay
         if decay < 1.0:
-            optim = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=decay)
-        return optim
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=decay)
+        return optim, scheduler
 
     def init_loaders(self, train_ds, val_ds):
         batch_size = self.cli_args.batch_size
@@ -162,7 +163,7 @@ class TrainerBase:
             self.model = self.init_model(sample=sample)
             log.info('Model initialized')
             self.totalTrainingSamples_count = 0
-            self.optimizer = self.init_optimizer()
+            self.optimizer, self.scheduler = self.init_optimizer()
             log.info('Optimizer initialized')
 
             # If model is using cnn_finetune, we need to update the transform with the new
@@ -242,6 +243,8 @@ class TrainerBase:
                     )
 
                     loss_var.backward()
+                    if self.scheduler:
+                        self.scheduler.step()
                     self.optimizer.step()
             else:
                 self.optimizer.zero_grad()
@@ -253,6 +256,8 @@ class TrainerBase:
                 )
 
                 loss_var.backward()
+                if self.scheduler:
+                    self.scheduler.step()
                 self.optimizer.step()
 
         self.totalTrainingSamples_count += len(train_dl.dataset)
