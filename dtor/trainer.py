@@ -20,7 +20,8 @@ import torch.nn as nn
 from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
-import torchvision.models as tv_models
+from dtor.utilities.utils import focal_loss
+import torch.nn.functional as F
 
 from dtor.loss.diceloss import DiceLoss
 from dtor.logconf import enumerate_with_estimate
@@ -29,6 +30,7 @@ from dtor.utilities.utils import find_folds, get_class_weights
 from dtor.utilities.model_retriever import model_choice
 from dtor.utilities.data_retriever import get_data
 from dtor.opts import init_parser
+from dtor.opts import norms
 
 log = logging.getLogger(__name__)
 # log.setLevel(logging.WARN)
@@ -53,6 +55,7 @@ class TrainerBase:
         self.trn_writer = None
         self.val_writer = None
         self.optimizer = None
+        self.scheduler = None
         self.root_dir = os.environ["DTORROOT"]
 
         parser = init_parser()
@@ -77,14 +80,19 @@ class TrainerBase:
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
 
-    def init_model(self):
+    def init_model(self, sample=None):
         return NotImplementedError
 
-    def init_data(self, fold):
+    def init_data(self, fold, mean=None, std=None):
         return NotImplementedError
 
     def init_optimizer(self):
-        return Adam(self.model.parameters(), lr=0.0001)
+        optim = Adam(self.model.parameters(), lr=self.cli_args.learnRate)
+        decay = self.cli_args.decay
+        scheduler = None
+        if decay < 1.0:
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=decay)
+        return optim, scheduler
 
     def init_loaders(self, train_ds, val_ds):
         batch_size = self.cli_args.batch_size
@@ -134,17 +142,47 @@ class TrainerBase:
             log.info(f'FOLD {fold}')
             log.info('--------------------------------')
 
-            # Model
-            self.model = self.init_model()
-            self.totalTrainingSamples_count = 0
-            self.optimizer = self.init_optimizer()
-
             # Data
-            train_ds, val_ds, train_dl, val_dl = self.init_data(fold)
+            mean, std = norms[self.cli_args.norm]
+            train_ds, val_ds, train_dl, val_dl = self.init_data(fold, mean=mean, std=std)
+
+            # Get a sample batch
+            sample = []
+            for n, point in enumerate(train_dl):
+                if n == 1:
+                    break
+                x = point[0]
+                sample.append(x)
+            sample = torch.cat(sample, dim=0)
 
             # Generate weights
+            log.info('Calculating class weights')
             self.weights = get_class_weights(train_ds)
             self.weights = self.weights.to(self.device)
+
+            # Model
+            log.info('Initializing model')
+            self.model = self.init_model(sample=sample)
+            log.info('Model initialized')
+            self.totalTrainingSamples_count = 0
+            self.optimizer, self.scheduler = self.init_optimizer()
+            log.info('Optimizer initialized')
+
+            # If model is using cnn_finetune, we need to update the transform with the new
+            # mean and std deviation values
+            try:
+                dpm = self.model if not self.use_cuda else self.model.module
+            except nn.modules.module.ModuleAttributeError:
+                dpm = self.model
+
+            if hasattr(dpm, "original_model_info"):
+                log.info('*******************USING PRETRAINED MODEL*********************')
+                mean = dpm.original_model_info.mean
+                std = dpm.original_model_info.std
+                train_ds, val_ds, train_dl, val_dl = self.init_data(fold, mean=mean, std=std)
+
+            log.info('*******************NORMALISATION DETAILS*********************')
+            log.info(f"preprocessing mean: {mean}, std: {std}")
 
             for epoch_ndx in range(1, self.cli_args.epochs + 1):
                 log.info("FOLD {}, Epoch {} of {}, {}/{} batches of size {}*{}".format(
@@ -208,6 +246,8 @@ class TrainerBase:
 
                     loss_var.backward()
                     self.optimizer.step()
+                    if self.scheduler:
+                        self.scheduler.step()
             else:
                 self.optimizer.zero_grad()
                 loss_var = self.compute_batch_loss(
@@ -219,6 +259,8 @@ class TrainerBase:
 
                 loss_var.backward()
                 self.optimizer.step()
+                if self.scheduler:
+                    self.scheduler.step()
 
         self.totalTrainingSamples_count += len(train_dl.dataset)
 
@@ -251,14 +293,22 @@ class TrainerBase:
         label_g = label_t.to(self.device, non_blocking=True)
 
         input_g=input_g.float()
-        logits_g, probability_g = self.model(input_g)
-
-        if "dice" in self.cli_args.loss.lower():
-            loss_func = DiceLoss(classes=3)
+        if self.cli_args.dim == 2:
+            logits_g = self.model(input_g)
+            probability_g = nn.Softmax(dim=1)(logits_g)
         else:
-            loss_func = nn.CrossEntropyLoss(reduction='none', weight = self.weights)
+            logits_g, probability_g = self.model(input_g)
 
-        loss_g = loss_func(logits_g, label_g)
+        CE = nn.CrossEntropyLoss(reduction='none', weight = self.weights)
+        if "focal" in self.cli_args.loss.lower():
+            loss_string = self.cli_args.loss
+            parts = loss_string.split("_")
+            assert len(parts) == 3, "Focal loss requires 'focal_ALPHA_BETA' formatting"
+            alpha = float(parts[1])
+            gamma = float(parts[2])
+            loss_g = focal_loss(CE(logits_g, label_g), label_g, gamma, alpha)
+        else:
+            loss_g = CE(logits_g, label_g)
         
         start_ndx = batch_ndx * batch_size
         end_ndx = start_ndx + label_t.size(0)
@@ -375,13 +425,11 @@ class Trainer(TrainerBase):
     def __init__(self):
         super().__init__()
 
-    def init_model(self):
-        if self.cli_args.resume:
-            model = model_choice(self.cli_args.model, resume=self.cli_args.resume)
-        elif self.cli_args.pretrain_loc:
-            model = model_choice(self.cli_args.model, pretrain_loc=self.cli_args.pretrain_loc)
-        else:
-            model = model_choice(self.cli_args.model)
+    def init_model(self, sample=None):
+        model = model_choice(self.cli_args.model, 
+                resume=self.cli_args.resume, sample=sample,
+                pretrain_loc=self.cli_args.pretrain_loc,
+                pretrained_2d_name=self.cli_args.pretrained_2d_name)
 
         if self.use_cuda:
             log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
@@ -390,11 +438,16 @@ class Trainer(TrainerBase):
             model = model.to(self.device)
         return model
 
-    def init_data(self, fold):
+    def init_data(self, fold, mean=None, std=None):
         aug = False
         if self.cli_args.augments > 0:
             aug = True
-        train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug)
+        if mean:
+            train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
+                                        mean=mean, std=std, dim=self.cli_args.dim)
+        else:
+            train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
+                    dim=self.cli_args.dim)
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
 

@@ -32,8 +32,13 @@ res_preds = []
 for f in range(tot_folds):
     # Load test data
     data = CTImageDataset(fold=f, tr_test="test", chunked_csv="data/chunked.csv")
+    
+    # Make sample for loading
+    _f, _, _ = data[0]
+    sample = _f.unsqueeze(0)
+    
     # Get model for the fold
-    model = load_model(prefix, f, "nominal")
+    model = load_model(prefix, f, "nominal", sample=sample)
 
     # Generate vector of predictions and true labels
     y_preds = dict()

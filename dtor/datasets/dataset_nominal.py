@@ -33,12 +33,12 @@ class CTImageDataset(Dataset):
                             buffer=10, # create
                             tot_folds=3, # create
                             label="L_LTP_date", # create
+                            deform=True, # create
                             chunked_csv=None, # use
                             fold=None, # use
                             tr_test=None, # use
                             transform=None, # use
-                            deform=True
-                      
+                            dim=3
                             ):
         """
         Initialization
@@ -59,6 +59,9 @@ class CTImageDataset(Dataset):
         self.root_dir = root_dir
         self.transform = transform
         self.buffer = buffer
+        self.deform = deform
+        self.dim = dim
+
         if chunked_csv:
             self.chunked_images = pd.read_csv(chunked_csv, sep="\t")
             # Restrict by fold + train/test
@@ -90,8 +93,15 @@ class CTImageDataset(Dataset):
         label = self.chunked_images.loc[idx, 'label']
         weight = self.chunked_images.loc[idx, 'weight']
         image = np.load(fname)
-        image = torch.from_numpy(image).to(torch.float32)
 
+        if self.dim == 2:
+            image_l = np.moveaxis(image, 1, 0)
+            counts = [np.sum(s[2, :, :]) for s in image_l]
+            _slice = np.argmax(counts)
+            image = image[:, _slice, :, :]
+        
+        image = torch.from_numpy(image).to(torch.float32)
+        
         if self.transform:
             image = self.transform(image)
 
@@ -161,9 +171,9 @@ class CTImageDataset(Dataset):
             print(f"Final cropped shape is {cc_liver_post.shape}")
             print(f"Box was {a_box}")
             # Generate our (padded if necessary) chunks
-            l_liver_post = expand_image(cc_liver_post, shape, stride, deform=deform)
-            l_liver_pre = expand_image(cc_liver_pre, shape, stride, deform=deform)
-            l_tumor_post = expand_image(cc_tumor_post, shape, stride, deform=deform)
+            l_liver_post = expand_image(cc_liver_post, shape, stride, deform=self.deform)
+            l_liver_pre = expand_image(cc_liver_pre, shape, stride, deform=self.deform)
+            l_tumor_post = expand_image(cc_tumor_post, shape, stride, deform=self.deform)
 
         
             
@@ -191,7 +201,10 @@ class CTImageDataset(Dataset):
 
                 fname = sub_name(point_counter, patient, abl)
                 data = np.stack((f_post, f_pre, f_tumor), axis=-1)
+                print(f"shape before: {data.shape}")
                 data = np.moveaxis(data, -1, 0)
+                data = np.moveaxis(data, -1, 1)
+                print(f"shape after: {data.shape}")
                 np.save(fname, data)
                 d_data["filename"].append(fname)
                 point_counter += 1

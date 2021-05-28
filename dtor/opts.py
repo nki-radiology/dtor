@@ -8,6 +8,14 @@ import json
 import argparse
 
 
+norms = {
+    'torchvision_3d': ([0.43216, 0.394666, 0.37645],
+                       [0.22803, 0.22145, 0.216989]),
+    'torchvision_2d': ([0.485, 0.456, 0.406],
+                       [0.229, 0.224, 0.225])
+}
+
+
 def init_parser():
     parser = argparse.ArgumentParser()
     parser.add_argument('--num-workers',
@@ -92,8 +100,19 @@ def init_parser():
                         nargs='?',
                         default="",
                         )
+    parser.add_argument('--pretrained_2d_name',
+                        help="Which 2d pretrained model to use",
+                        type=str,
+                        nargs='?',
+                        default="",
+                        )
+    parser.add_argument('--dim',
+                        help="Dimensions of input data",
+                        type=int,
+                        nargs='?',
+                        default=3,
+                        )
     return parser
-
 
 class ResNetOptions:
     def __init__(self, injson):

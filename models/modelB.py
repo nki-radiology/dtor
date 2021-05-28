@@ -10,16 +10,16 @@ class ModelB(nn.Module):
         if fix_inmodel:
             for param in self.modelA.parameters():
                 param.requires_grad = False
-        
-        self.block1 = nn.Linear(base_output_shape, 50)
-        self.block2 = nn.Linear(50, 8)
-        self.classifier = nn.Linear(8, output_classes)
+
+        self.classifier = nn.Linear(base_output_shape, output_classes)
         self.head_softmax = nn.Softmax(dim=1)
         
     def forward(self, x):
         x = self.modelA(x)
-        x = self.block1(x)
-        x = self.block2(x)
-        x = self.classifier(x)
+        conv_flat = x.view(
+            x.size(0),
+            -1,
+        )
+        x = self.classifier(conv_flat)
         
         return x, self.head_softmax(x)
