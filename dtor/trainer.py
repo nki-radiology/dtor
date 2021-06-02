@@ -232,35 +232,18 @@ class TrainerBase:
         )
         for batch_ndx, batch_tup in batch_iter:
 
-            if self.cli_args.augments > 0:
-                for _ in range(self.cli_args.augments):
-                    input_t, label_t, _ = batch_tup
+            self.optimizer.zero_grad()
+            loss_var = self.compute_batch_loss(
+                batch_ndx,
+                batch_tup,
+                train_dl.batch_size,
+                trn_metrics_g
+            )
 
-                    self.optimizer.zero_grad()
-                    loss_var = self.compute_batch_loss(
-                        batch_ndx,
-                        batch_tup,
-                        train_dl.batch_size,
-                        trn_metrics_g
-                    )
-
-                    loss_var.backward()
-                    self.optimizer.step()
-                    if self.scheduler:
-                        self.scheduler.step()
-            else:
-                self.optimizer.zero_grad()
-                loss_var = self.compute_batch_loss(
-                    batch_ndx,
-                    batch_tup,
-                    train_dl.batch_size,
-                    trn_metrics_g
-                )
-
-                loss_var.backward()
-                self.optimizer.step()
-                if self.scheduler:
-                    self.scheduler.step()
+            loss_var.backward()
+            self.optimizer.step()
+            if self.scheduler:
+                self.scheduler.step()
 
         self.totalTrainingSamples_count += len(train_dl.dataset)
 
@@ -282,11 +265,11 @@ class TrainerBase:
             )
             for batch_ndx, batch_tup in batch_iter:
                 self.compute_batch_loss(
-                    batch_ndx, batch_tup, val_dl.batch_size, val_metrics_g)
+                    batch_ndx, batch_tup, val_dl.batch_size, val_metrics_g, debug=False)
 
         return val_metrics_g.to('cpu')
 
-    def compute_batch_loss(self, batch_ndx, batch_tup, batch_size, metrics_g):
+    def compute_batch_loss(self, batch_ndx, batch_tup, batch_size, metrics_g, debug=False):
         input_t, label_t, _ = batch_tup
 
         input_g = input_t.to(self.device, non_blocking=True)
@@ -315,6 +298,12 @@ class TrainerBase:
         metrics_g[METRICS_LABEL_NDX, start_ndx:end_ndx] = label_g.detach()
         metrics_g[METRICS_PRED_NDX, start_ndx:end_ndx] = probability_g[:, 1].detach()
         metrics_g[METRICS_LOSS_NDX, start_ndx:end_ndx] = loss_g.detach()
+        if debug:
+            print(logits_g)
+            print(label_g)
+            print(probability_g[:, 1])
+            print(loss_g)
+            print("***")
 
         return loss_g.mean()
 
