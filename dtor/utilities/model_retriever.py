@@ -17,21 +17,24 @@ import torch.nn as nn
 import torch
 
 
-def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None,
-                 pretrained_2d_name=None, depth=50):
-    assert m_name in ["pretrained_2d", "nominal", "resnet", "resnet18+dense", "unet"]
+def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, pretrained_2d_name=None, 
+        depth=101, torchresnet=False, n_classes=700, fix_inmodel=95):
+    assert m_name in ["pretrained_2d", "nominal", "resnet+dense", "unet"]
 
     if m_name == "nominal":
         model_dry = Model(dry=True)
         prelim = classifier_shape(model_dry, sample)
         model = Model(prelim=prelim)
-    elif m_name == "resnet":
-        model = generate_model(depth, n_classes=2)
-    elif m_name == "resnet18+dense":
-        modela = r3d_18(pretrained=True, progress=True)
+    elif m_name == "resnet+dense":
+        if torchresnet:
+            modela = r3d_18(pretrained=True, progress=True)
+        else:
+            modela = generate_model(depth, n_classes=700)
+        if pretrain_loc:
+            modela = safe_restore(modela, pretrain_loc)
         modela = nn.Sequential(*list(modela.children())[:-2])
         shape = classifier_shape(modela, sample)
-        model = ModelB(modela, base_output_shape=shape)
+        model = ModelB(modela, base_output_shape=shape, fix_inmodel=fix_inmodel)
     elif m_name == 'pretrained_2d':
         model = make_model(pretrained_2d_name, num_classes=2, pretrained=True, input_size=(214, 214),
                            classifier_factory=make_classifier)

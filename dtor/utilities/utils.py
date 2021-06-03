@@ -309,15 +309,20 @@ def safe_restore(_model, state_loc):
         _model.load_state_dict(torch.load(state_loc,
                                           map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu")))
     except RuntimeError:
-        _d = torch.load(state_loc,  map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu"))
-        if 'net' in list(_d.keys()):
-            _d = _d['net']
-        for k in list(_d.keys()):
-            newkey = '.'.join(k.split('.')[1:])
-            print(f"{k} becomes {newkey}")
-            _d[newkey] = _d[k]
-            _d.pop(k, None)
-        _model.load_state_dict(_d)
+        try:
+            _d = torch.load(state_loc,  map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu"))
+            _d = _d['state_dict']
+            _model.load_state_dict(_d)
+        except RuntimeError:
+            _d = torch.load(state_loc,  map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu"))
+            if 'net' in list(_d.keys()):
+                _d = _d['net']
+            for k in list(_d.keys()):
+                newkey = '.'.join(k.split('.')[1:])
+                print(f"{k} becomes {newkey}")
+                _d[newkey] = _d[k]
+                _d.pop(k, None)
+            _model.load_state_dict(_d)
     return _model
 
 
