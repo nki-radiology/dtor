@@ -29,8 +29,9 @@ def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, 
         model, _ = generate_model(opt)
     elif m_name == "resnet18+dense":
         modela = r3d_18(pretrained=True, progress=True)
+        modela = nn.Sequential(*list(modela.children())[:-2])
         shape = classifier_shape(modela, sample)
-        model = ModelB(modela, base_output_shape=shape, fix_inmodel=False)
+        model = ModelB(modela, base_output_shape=shape)
     elif m_name == 'pretrained_2d':
         model = make_model(pretrained_2d_name, num_classes=2, pretrained=True, input_size=(214, 214),
                            classifier_factory=make_classifier)
