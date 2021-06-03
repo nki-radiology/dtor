@@ -242,8 +242,8 @@ class TrainerBase:
 
             loss_var.backward()
             self.optimizer.step()
-            if self.scheduler:
-                self.scheduler.step()
+        if self.scheduler:
+            self.scheduler.step()
 
         self.totalTrainingSamples_count += len(train_dl.dataset)
 
