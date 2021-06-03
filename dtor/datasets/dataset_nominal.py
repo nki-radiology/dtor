@@ -166,7 +166,7 @@ class CTImageDataset(Dataset):
             cc_tumor_post = crop3d(c_tumor_post, a_box)
             cc_liver_post = crop3d(liver_post, a_box)
             cc_liver_pre = crop3d(liver_pre, a_box)
-            cc_liver_pre=removeOutliers(cc_liver_pre)
+            cc_liver_pre = removeOutliers(cc_liver_pre)
 
             print(f"Final cropped shape is {cc_liver_post.shape}")
             print(f"Box was {a_box}")

@@ -4,7 +4,7 @@
 __author__ = "Sean Benson"
 __copyright__ = "MIT"
 
-from models.gen_model import generate_model
+from models.resnet import generate_model
 from models.ltp import Model
 from models.modelB import ModelB
 from models.modelB_single import ModelBSingle
@@ -17,16 +17,16 @@ import torch.nn as nn
 import torch
 
 
-def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, pretrained_2d_name=None):
-    assert m_name in ["pretrained_2d", "nominal", "resnet18", "resnet18+dense", "unet"]
+def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None,
+                 pretrained_2d_name=None, depth=50):
+    assert m_name in ["pretrained_2d", "nominal", "resnet", "resnet18+dense", "unet"]
 
     if m_name == "nominal":
         model_dry = Model(dry=True)
         prelim = classifier_shape(model_dry, sample)
         model = Model(prelim=prelim)
-    elif m_name == "resnet18":
-        opt = ResNetOptions("settings/resnet10.json")
-        model, _ = generate_model(opt)
+    elif m_name == "resnet":
+        model = generate_model(depth, n_classes=2)
     elif m_name == "resnet18+dense":
         modela = r3d_18(pretrained=True, progress=True)
         modela = nn.Sequential(*list(modela.children())[:-2])
