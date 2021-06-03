@@ -91,7 +91,7 @@ class TrainerBase:
         decay = self.cli_args.decay
         scheduler = None
         if decay < 1.0:
-            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=decay)
+            scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=decay, verbose=True)
         return optim, scheduler
 
     def init_loaders(self, train_ds, val_ds):
@@ -217,7 +217,7 @@ class TrainerBase:
         with open(cli_name, 'w') as f:
             json.dump(self.cli_args.__dict__, f, indent=2)
 
-    def do_training(self, fold, epoch_ndx, train_dl, num_augmentations=None):
+    def do_training(self, fold, epoch_ndx, train_dl):
         self.model = self.model.train().to(self.device)
         trn_metrics_g = torch.zeros(
             METRICS_SIZE,
