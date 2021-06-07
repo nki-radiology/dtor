@@ -21,6 +21,7 @@ from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from dtor.utilities.utils import focal_loss
+from dtor.loss.sam import SAM
 import torch.nn.functional as F
 
 from dtor.loss.diceloss import DiceLoss
@@ -87,7 +88,7 @@ class TrainerBase:
         return NotImplementedError
 
     def init_optimizer(self):
-        optim = Adam(self.model.parameters(), lr=self.cli_args.learnRate)
+        optim = SAM(self.model.parameters(), Adam, lr=self.cli_args.learnRate)
         decay = self.cli_args.decay
         scheduler = None
         if decay < 1.0:
