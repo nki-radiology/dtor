@@ -88,7 +88,10 @@ class TrainerBase:
         return NotImplementedError
 
     def init_optimizer(self):
-        optim = SAM(self.model.parameters(), Adam, lr=self.cli_args.learnRate)
+        if self.cli_args.sam:
+            optim = SAM(self.model.parameters(), Adam, lr=self.cli_args.learnRate)
+        else:
+            optim = Adam(self.model.parameters(), lr=self.cli_args.learnRate)
         decay = self.cli_args.decay
         scheduler = None
         if decay < 1.0:
@@ -233,16 +236,22 @@ class TrainerBase:
         )
         for batch_ndx, batch_tup in batch_iter:
 
-            self.optimizer.zero_grad()
-            loss_var = self.compute_batch_loss(
-                batch_ndx,
-                batch_tup,
-                train_dl.batch_size,
-                trn_metrics_g
-            )
-
-            loss_var.backward()
-            self.optimizer.step()
+            def closure():
+                self.optimizer.zero_grad()
+                loss_var = self.compute_batch_loss(
+                    batch_ndx,
+                    batch_tup,
+                    train_dl.batch_size,
+                    trn_metrics_g
+                )
+                loss_var.backward()
+                return loss_var
+            if self.cli_args.sam:
+                self.optimizer.step(closure)
+            else:
+                closure()
+                self.optimizer.step()
+                
         if self.scheduler:
             self.scheduler.step()
 
