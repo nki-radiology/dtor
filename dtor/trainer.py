@@ -251,7 +251,7 @@ class TrainerBase:
             else:
                 closure()
                 self.optimizer.step()
-                
+
         if self.scheduler:
             self.scheduler.step()
 
@@ -428,7 +428,9 @@ class Trainer(TrainerBase):
         model = model_choice(self.cli_args.model, 
                 resume=self.cli_args.resume, sample=sample,
                 pretrain_loc=self.cli_args.pretrain_loc,
-                pretrained_2d_name=self.cli_args.pretrained_2d_name)
+                pretrained_2d_name=self.cli_args.pretrained_2d_name,
+                depth=self.cli_args.rn_depth,
+                n_classes=self.cli_args.rn_nclasses, fix_inmodel=self.cli_args.fix_nlayers)
 
         if self.use_cuda:
             log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
