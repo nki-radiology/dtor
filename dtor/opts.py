@@ -118,21 +118,22 @@ def init_parser():
                         nargs='?',
                         default=False,
                         )
+    parser.add_argument('--fix_nlayers',
+                        help="How many layers of the input model do we fix",
+                        type=int,
+                        nargs='?',
+                        default=95,
+                        )
+    parser.add_argument('--rn_depth',
+                        help="How big a resnet do you want",
+                        type=int,
+                        nargs='?',
+                        default=101,
+                        )
+    parser.add_argument('--rn_nclasses',
+                        help="How many classes were in the original training",
+                        type=int,
+                        nargs='?',
+                        default=700,
+                        )
     return parser
-
-class ResNetOptions:
-    def __init__(self, injson):
-        injson = open(injson,"r")
-        injson =json.load(injson)
-        #
-        self.model = injson['model']
-        self.input_W = injson['input_W']
-        self.input_D = injson['input_D']
-        self.input_H = injson['input_H']
-        self.model_depth = injson['model_depth']
-        self.resnet_shortcut = injson['resnet_shortcut']
-        self.n_seg_classes = injson['n_seg_classes']
-        self.no_cuda=True if injson['no_cuda'] else False
-        self.phase = injson['phase']
-        self.pretrain_path = injson['pretrain_path']
-        self.new_layer_names = injson['new_layer_names']

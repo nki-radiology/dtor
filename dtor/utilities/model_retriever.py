@@ -18,7 +18,7 @@ import torch
 
 
 def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, pretrained_2d_name=None, 
-        depth=101, torchresnet=False, n_classes=700, fix_inmodel=95):
+        depth=101, n_classes=700, fix_inmodel=95):
     assert m_name in ["pretrained_2d", "nominal", "resnet+dense", "unet"]
 
     if m_name == "nominal":
@@ -26,10 +26,10 @@ def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, 
         prelim = classifier_shape(model_dry, sample)
         model = Model(prelim=prelim)
     elif m_name == "resnet+dense":
-        if torchresnet:
+        if depth==18:
             modela = r3d_18(pretrained=True, progress=True)
         else:
-            modela = generate_model(depth, n_classes=700)
+            modela = generate_model(depth, n_classes=n_classes)
         if pretrain_loc:
             modela = safe_restore(modela, pretrain_loc)
         modela = nn.Sequential(*list(modela.children())[:-2])
