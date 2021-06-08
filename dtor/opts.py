@@ -112,6 +112,12 @@ def init_parser():
                         nargs='?',
                         default=3,
                         )
+    parser.add_argument('--sam',
+                        help="Do we want to turn on the SAM overfitting protection",
+                        type=bool,
+                        nargs='?',
+                        default=False,
+                        )
     return parser
 
 class ResNetOptions:
