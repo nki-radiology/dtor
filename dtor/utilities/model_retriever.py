@@ -9,7 +9,6 @@ from models.ltp import Model
 from models.modelB import ModelB
 from models.modelB_single import ModelBSingle
 from models.Unet import UNet, RecombinationBlock
-from dtor.opts import ResNetOptions
 from torchvision.models.video import r3d_18
 from dtor.utilities.utils import safe_restore
 from cnn_finetune import make_model
