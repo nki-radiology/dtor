@@ -63,7 +63,7 @@ class TrainerBase:
         args = parser.parse_args(sys_argv)
         if args.load_json:
             with open(args.load_json, 'r') as f:
-                args.__dict__ = json.load(f)
+                args.__dict__.update(json.load(f))
         self.cli_args = args
         self.time_str = datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S')
 
@@ -246,10 +246,10 @@ class TrainerBase:
                 )
                 loss_var.backward()
                 return loss_var
+            closure()
             if self.cli_args.sam:
                 self.optimizer.step(closure)
             else:
-                closure()
                 self.optimizer.step()
 
         if self.scheduler:
