@@ -11,7 +11,7 @@ import matplotlib.pyplot as plt
 import numpy as np
 from scipy.signal import resample_poly
 
-_factors = [(5, 1), (5, 1), (5, 1)]
+_factors = [(3, 1), (3, 1), (3, 1)]
 
 def array_to_color(array, cmap="Oranges"):
     s_m = plt.cm.ScalarMappable(cmap=cmap)
