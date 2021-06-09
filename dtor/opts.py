@@ -118,6 +118,12 @@ def init_parser():
                         nargs='?',
                         default=False,
                         )
+    parser.add_argument('--dset_lim',
+                        help="How many data points to we want (MNIST OPTION ONLY)",
+                        type=int,
+                        nargs='?',
+                        default=150,
+                        )
     parser.add_argument('--fix_nlayers',
                         help="How many layers of the input model do we fix",
                         type=int,

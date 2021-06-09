@@ -445,10 +445,10 @@ class Trainer(TrainerBase):
             aug = True
         if mean:
             train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
-                                        mean=mean, std=std, dim=self.cli_args.dim)
+                                        mean=mean, std=std, dim=self.cli_args.dim, limit=self.cli_args.dset_lim)
         else:
             train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
-                    dim=self.cli_args.dim)
+                    dim=self.cli_args.dim, limit=self.cli_args.dset_lim)
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
 
