@@ -8,12 +8,9 @@ class ModelB(nn.Module):
         self.modelA = inmodel
 
         if fix_inmodel:
-         #   for param in self.modelA.parameters():
-          #      param.requires_grad = False
-            for n, l in enumerate(self.modelA.children()):
-                if n<15:
-                   for param in l.parameters():
-                       param.requires_grad = False 
+           for param in self.modelA.parameters():
+                param.requires_grad = False
+            
        
         self.classifier = nn.Linear(base_output_shape, output_classes)
         self.head_softmax = nn.Softmax(dim=1)
