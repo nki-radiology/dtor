@@ -38,7 +38,7 @@ class MNIST3DDataset(Dataset):
     Dataset from 3D MNIST point cloud for testing
     """
 
-    def __init__(self, h5_file, tr_test=None, transform=None):
+    def __init__(self, h5_file, tr_test=None, transform=None, limit=None):
         """
         Initialization
 
@@ -50,8 +50,12 @@ class MNIST3DDataset(Dataset):
         with h5py.File(h5_file, "r") as hf:
             datapoints = list(hf.keys())
             print(f"Found {list(hf.keys())} keys")
-            self.X = hf[f"X_{tr_test}"][:]
-            self.y = hf[f"y_{tr_test}"][:]
+            if limit:
+                self.X = hf[f"X_{tr_test}"][:limit]
+                self.y = hf[f"y_{tr_test}"][:limit]
+            else:
+                self.X = hf[f"X_{tr_test}"][:]
+                self.y = hf[f"y_{tr_test}"][:]
 
         self.X, self.y = data_transform(self.X, self.y) 
         print(f"Kept {self.y.shape} data points")
