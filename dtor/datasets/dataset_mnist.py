@@ -9,7 +9,9 @@ from torch.utils.data import Dataset
 import h5py
 import matplotlib.pyplot as plt
 import numpy as np
+from scipy.signal import resample_poly
 
+_factors = [(5, 1), (5, 1), (5, 1)]
 
 def array_to_color(array, cmap="Oranges"):
     s_m = plt.cm.ScalarMappable(cmap=cmap)
@@ -23,7 +25,9 @@ def data_transform(data, labels, req=[0, 1]):
         if labels[i] not in req:
             continue
         i_data = array_to_color(data[i]).reshape(16, 16, 16, 3)
-        i_data = np.moveaxis(i_data, -1, 0) 
+        for k in range(3):
+            i_data = resample_poly(i_data, _factors[k][0], _factors[k][1], axis=k)
+        i_data = np.moveaxis(i_data, -1, 0)
         data_t.append(i_data)
         label_t.append(labels[i])
     return np.asarray(data_t, dtype=np.float32), np.asarray(label_t)
