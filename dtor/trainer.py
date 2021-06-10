@@ -21,6 +21,7 @@ from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from dtor.utilities.utils import focal_loss
+from dtor.utilities.torchutils import EarlyStopping
 from dtor.loss.sam import SAM
 import torch.nn.functional as F
 
@@ -172,6 +173,11 @@ class TrainerBase:
             self.optimizer, self.scheduler = self.init_optimizer()
             log.info('Optimizer initialized')
 
+            # If early stopping initialise
+            es = None
+            if self.cli_args.earlystopping:
+                es = EarlyStopping()
+
             # If model is using cnn_finetune, we need to update the transform with the new
             # mean and std deviation values
             try:
@@ -188,6 +194,7 @@ class TrainerBase:
             log.info('*******************NORMALISATION DETAILS*********************')
             log.info(f"preprocessing mean: {mean}, std: {std}")
 
+            # Training loop
             for epoch_ndx in range(1, self.cli_args.epochs + 1):
                 log.info("FOLD {}, Epoch {} of {}, {}/{} batches of size {}*{}".format(
                     fold,
@@ -204,6 +211,11 @@ class TrainerBase:
 
                 val_metrics_t = self.do_validation(fold, epoch_ndx, val_dl)
                 self.log_metrics(fold, epoch_ndx, 'val', val_metrics_t)
+
+                if es:
+                    es(val_metrics_t[METRICS_LOSS_NDX].mean())
+                    if es.early_stop:
+                        break
 
             model_path = os.path.join(pathlib.Path(os.environ["DTORROOT"]),
                                       f"results/model-{self.cli_args.tb_prefix}-fold{fold}.pth")

@@ -124,6 +124,12 @@ def init_parser():
                         nargs='?',
                         default=150,
                         )
+    parser.add_argument('--earlystopping',
+                        help="Do we want to use early stopping to ",
+                        type=bool,
+                        nargs='?',
+                        default=True,
+                        )
     parser.add_argument('--fix_nlayers',
                         help="How many layers of the input model do we fix",
                         type=int,
