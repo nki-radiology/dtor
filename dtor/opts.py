@@ -125,10 +125,16 @@ def init_parser():
                         default=150,
                         )
     parser.add_argument('--earlystopping',
-                        help="Do we want to use early stopping to ",
-                        type=bool,
+                        help="Early stopping to avoid overfitting, 0=off, n>0 is patience",
+                        type=int,
                         nargs='?',
-                        default=True,
+                        default=3,
+                        )
+    parser.add_argument('--mode',
+                        help="train | tune",
+                        type=str,
+                        nargs='?',
+                        default="train",
                         )
     parser.add_argument('--fix_nlayers',
                         help="How many layers of the input model do we fix",
