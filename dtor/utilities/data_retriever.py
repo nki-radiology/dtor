@@ -31,7 +31,8 @@ class ConvertDCHWtoCDHW(nn.Module):
 def get_data(name, csv_loc=None, fold=None, aug=False,
              mean=None,
              std=None,
-             dim=3):
+             dim=3,
+             limit=None):
     """
     Helper function for datasets
     Args:
@@ -74,9 +75,11 @@ def get_data(name, csv_loc=None, fold=None, aug=False,
     if name.lower() == "mnist3d":
         train_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5",
                                   tr_test="train",
-                                  transform=tr_aug if aug else tr_eval)
+                                  transform=tr_aug if aug else tr_eval,
+                                  limit=limit)
         val_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5",
-                                tr_test="test", transform=tr_eval)
+                                tr_test="test", transform=tr_eval,
+                                limit=limit)
     else:
 
         train_ds = CTImageDataset(chunked_csv=csv_loc,

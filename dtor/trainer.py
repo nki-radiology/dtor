@@ -21,8 +21,13 @@ from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from dtor.utilities.utils import focal_loss
+from dtor.utilities.torchutils import EarlyStopping
 from dtor.loss.sam import SAM
 import torch.nn.functional as F
+
+from ray import tune
+from ray.tune import CLIReporter
+from ray.tune.schedulers import ASHAScheduler
 
 from dtor.loss.diceloss import DiceLoss
 from dtor.logconf import enumerate_with_estimate
@@ -63,7 +68,7 @@ class TrainerBase:
         args = parser.parse_args(sys_argv)
         if args.load_json:
             with open(args.load_json, 'r') as f:
-                args.__dict__ = json.load(f)
+                args.__dict__.update(json.load(f))
         self.cli_args = args
         self.time_str = datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S')
 
@@ -87,8 +92,14 @@ class TrainerBase:
     def init_data(self, fold, mean=None, std=None):
         return NotImplementedError
 
+    def init_tune(self):
+        return NotImplementedError
+
     def init_optimizer(self):
-        optim = SAM(self.model.parameters(), Adam, lr=self.cli_args.learnRate)
+        if self.cli_args.sam:
+            optim = SAM(self.model.parameters(), Adam, lr=self.cli_args.learnRate)
+        else:
+            optim = Adam(self.model.parameters(), lr=self.cli_args.learnRate)
         decay = self.cli_args.decay
         scheduler = None
         if decay < 1.0:
@@ -138,6 +149,9 @@ class TrainerBase:
         else:
             tot_folds = 1
 
+        assert self.cli_args.mode in ["train", "tune"], "Only train or tune are allowed modes"
+        log.info(f"********** MODE = {self.cli_args.mode} *****************")
+
         for fold in range(tot_folds):
             # Print
             log.info(f'FOLD {fold}')
@@ -169,6 +183,11 @@ class TrainerBase:
             self.optimizer, self.scheduler = self.init_optimizer()
             log.info('Optimizer initialized')
 
+            # If early stopping initialise
+            es = None
+            if self.cli_args.earlystopping:
+                es = EarlyStopping(patience=self.cli_args.earlystopping)
+
             # If model is using cnn_finetune, we need to update the transform with the new
             # mean and std deviation values
             try:
@@ -185,6 +204,7 @@ class TrainerBase:
             log.info('*******************NORMALISATION DETAILS*********************')
             log.info(f"preprocessing mean: {mean}, std: {std}")
 
+            # Training loop
             for epoch_ndx in range(1, self.cli_args.epochs + 1):
                 log.info("FOLD {}, Epoch {} of {}, {}/{} batches of size {}*{}".format(
                     fold,
@@ -201,6 +221,11 @@ class TrainerBase:
 
                 val_metrics_t = self.do_validation(fold, epoch_ndx, val_dl)
                 self.log_metrics(fold, epoch_ndx, 'val', val_metrics_t)
+
+                if es:
+                    es(val_metrics_t[METRICS_LOSS_NDX].mean())
+                    if es.early_stop:
+                        break
 
             model_path = os.path.join(pathlib.Path(os.environ["DTORROOT"]),
                                       f"results/model-{self.cli_args.tb_prefix}-fold{fold}.pth")
@@ -233,16 +258,22 @@ class TrainerBase:
         )
         for batch_ndx, batch_tup in batch_iter:
 
-            self.optimizer.zero_grad()
-            loss_var = self.compute_batch_loss(
-                batch_ndx,
-                batch_tup,
-                train_dl.batch_size,
-                trn_metrics_g
-            )
+            def closure():
+                self.optimizer.zero_grad()
+                loss_var = self.compute_batch_loss(
+                    batch_ndx,
+                    batch_tup,
+                    train_dl.batch_size,
+                    trn_metrics_g
+                )
+                loss_var.backward()
+                return loss_var
+            closure()
+            if self.cli_args.sam:
+                self.optimizer.step(closure)
+            else:
+                self.optimizer.step()
 
-            loss_var.backward()
-            self.optimizer.step()
         if self.scheduler:
             self.scheduler.step()
 
@@ -419,7 +450,9 @@ class Trainer(TrainerBase):
         model = model_choice(self.cli_args.model, 
                 resume=self.cli_args.resume, sample=sample,
                 pretrain_loc=self.cli_args.pretrain_loc,
-                pretrained_2d_name=self.cli_args.pretrained_2d_name)
+                pretrained_2d_name=self.cli_args.pretrained_2d_name,
+                depth=self.cli_args.rn_depth,
+                n_classes=self.cli_args.rn_nclasses, fix_inmodel=self.cli_args.fix_nlayers)
 
         if self.use_cuda:
             log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
@@ -434,12 +467,21 @@ class Trainer(TrainerBase):
             aug = True
         if mean:
             train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
-                                        mean=mean, std=std, dim=self.cli_args.dim)
+                                        mean=mean, std=std, dim=self.cli_args.dim, limit=self.cli_args.dset_lim)
         else:
             train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
-                    dim=self.cli_args.dim)
+                    dim=self.cli_args.dim, limit=self.cli_args.dset_lim)
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
+
+    def init_tune(self):
+        config = {
+            "l1": tune.sample_from(lambda _: 2**np.random.randint(2, 9)),
+            "l2": tune.sample_from(lambda _: 2**np.random.randint(2, 9)),
+            "lr": tune.loguniform(1e-4, 1e-1),
+            "batch_size": tune.choice([2, 4, 8, 16])
+        }
+        return config
 
 
 if __name__ == '__main__':
