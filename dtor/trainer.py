@@ -25,6 +25,10 @@ from dtor.utilities.torchutils import EarlyStopping
 from dtor.loss.sam import SAM
 import torch.nn.functional as F
 
+from ray import tune
+from ray.tune import CLIReporter
+from ray.tune.schedulers import ASHAScheduler
+
 from dtor.loss.diceloss import DiceLoss
 from dtor.logconf import enumerate_with_estimate
 from dtor.logconf import logging
@@ -88,6 +92,9 @@ class TrainerBase:
     def init_data(self, fold, mean=None, std=None):
         return NotImplementedError
 
+    def init_tune(self):
+        return NotImplementedError
+
     def init_optimizer(self):
         if self.cli_args.sam:
             optim = SAM(self.model.parameters(), Adam, lr=self.cli_args.learnRate)
@@ -142,6 +149,9 @@ class TrainerBase:
         else:
             tot_folds = 1
 
+        assert self.cli_args.mode in ["train", "tune"], "Only train or tune are allowed modes"
+        log.info(f"********** MODE = {self.cli_args.mode} *****************")
+
         for fold in range(tot_folds):
             # Print
             log.info(f'FOLD {fold}')
@@ -176,7 +186,7 @@ class TrainerBase:
             # If early stopping initialise
             es = None
             if self.cli_args.earlystopping:
-                es = EarlyStopping()
+                es = EarlyStopping(patience=self.cli_args.earlystopping)
 
             # If model is using cnn_finetune, we need to update the transform with the new
             # mean and std deviation values
@@ -463,6 +473,15 @@ class Trainer(TrainerBase):
                     dim=self.cli_args.dim, limit=self.cli_args.dset_lim)
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
+
+    def init_tune(self):
+        config = {
+            "l1": tune.sample_from(lambda _: 2**np.random.randint(2, 9)),
+            "l2": tune.sample_from(lambda _: 2**np.random.randint(2, 9)),
+            "lr": tune.loguniform(1e-4, 1e-1),
+            "batch_size": tune.choice([2, 4, 8, 16])
+        }
+        return config
 
 
 if __name__ == '__main__':
