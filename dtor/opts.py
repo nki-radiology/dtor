@@ -42,15 +42,10 @@ def init_parser():
                         type=int,
                         nargs='?',
                         )
-    parser.add_argument('--tb-prefix',
+    parser.add_argument('--exp_name',
                         default='test',
                         nargs='?',
-                        help="Data prefix to use for Tensorboard run. Defaults to chapter.",
-                        )
-    parser.add_argument('--comment',
-                        help="Comment suffix for Tensorboard run.",
-                        nargs='?',
-                        default='dwlpt',
+                        help="Experiment name, will be used for model saving and logs",
                         )
     parser.add_argument('--datapoints',
                         help="Location of the CSV with our points and labels",

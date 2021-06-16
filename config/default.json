@@ -3,8 +3,8 @@
   "batch_size": 1,
   "epochs": 10,
   "seed": 1234,
-  "tb_prefix": "default",
-  "comment": "default",
+  "exp_name": "default",
+  "mode": "train",
   "datapoints": "data/chunked.csv",
   "loss": "focal_0.5_2.0",
   "learnRate": 0.00005,
@@ -17,5 +17,10 @@
   "resume": "",
   "pretrain_loc": "/DATA/sb/pretraining/3D-zoo-pytorch/r3d101_K_200ep.pth",
   "dim" : 3,
-  "norm": "torchvision_3d"
+  "norm": "torchvision_3d",
+  "sam": true,
+  "dset_lim": 200,
+  "fix_nlayers": 70,
+  "rn_depth": 101,
+  "rn_nclasses": 700
 }
