@@ -50,7 +50,7 @@ def enumerate_with_estimate(
     while print_ndx < start_ndx * backoff:
         print_ndx *= backoff
 
-    log.warning("{} ----/{}, starting".format(
+    log.info("{} ----/{}, starting".format(
         desc_str,
         iter_len,
     ))
@@ -80,7 +80,7 @@ def enumerate_with_estimate(
         if current_ndx + 1 == start_ndx:
             start_ts = time.time()
 
-    log.warning("{} ----/{}, done at {}".format(
+    log.info("{} ----/{}, done at {}".format(
         desc_str,
         iter_len,
         str(datetime.datetime.now()).rsplit('.', 1)[0],
