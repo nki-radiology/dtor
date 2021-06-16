@@ -477,6 +477,7 @@ class TrainerBase:
                                     val_metrics_t[METRICS_LABEL_NDX].numpy())
         except ValueError:
             return None
+        log.info(f"Calculated objective: {obj}")
         return - obj
 
     def tune(self):
