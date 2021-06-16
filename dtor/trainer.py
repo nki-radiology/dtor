@@ -379,8 +379,7 @@ class TrainerBase:
             type(self).__name__,
         ))
 
-        metrics_dict, pos_count, neg_count, pos_correct, neg_correct\
-            = process_metrics(metrics_t, classification_threshold)
+        metrics_dict = process_metrics(metrics_t, classification_threshold)
 
         log.info(
             ("F{} E{} {:8} {loss/all:.4f} loss, "
