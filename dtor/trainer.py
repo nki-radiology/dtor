@@ -22,12 +22,13 @@ from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from dtor.utilities.utils import focal_loss
 from dtor.utilities.torchutils import EarlyStopping
+from dtor.utilities.torchutils import process_metrics, \
+    METRICS_LOSS_NDX, METRICS_LABEL_NDX, METRICS_PRED_NDX, METRICS_SIZE, \
+    from_metrics_f1
 from dtor.loss.sam import SAM
 import torch.nn.functional as F
 
-from ray import tune
-from ray.tune import CLIReporter
-from ray.tune.schedulers import ASHAScheduler
+import optuna
 
 from dtor.loss.diceloss import DiceLoss
 from dtor.logconf import enumerate_with_estimate
@@ -43,12 +44,6 @@ log = logging.getLogger(__name__)
 log.setLevel(logging.INFO)
 log.setLevel(logging.DEBUG)
 
-# Used for computeBatchLoss and logMetrics to index into metrics_t/metrics_a
-METRICS_LABEL_NDX = 0
-METRICS_PRED_NDX = 1
-METRICS_LOSS_NDX = 2
-METRICS_SIZE = 3
-
 
 class TrainerBase:
     def __init__(self, sys_argv=None):
@@ -62,6 +57,8 @@ class TrainerBase:
         self.val_writer = None
         self.optimizer = None
         self.scheduler = None
+        self.train_dl = None
+        self.val_dl = None
         self.root_dir = os.environ["DTORROOT"]
 
         parser = init_parser()
@@ -86,6 +83,20 @@ class TrainerBase:
             torch.backends.cudnn.deterministic = True
             torch.backends.cudnn.benchmark = False
 
+        # Make all tunable hyperparameters members
+        self.t_learnRate = self.cli_args.learnRate
+        self.t_decay = self.cli_args.decay
+        if "focal" in self.cli_args.loss.lower():
+            loss_string = self.cli_args.loss
+            parts = loss_string.split("_")
+            assert len(parts) == 3, "Focal loss requires 'focal_ALPHA_BETA' formatting"
+            self.t_alpha = float(parts[1])
+            self.t_gamma = float(parts[2])
+
+        # Make results directory
+        self.output_dir = os.path.join("results", f"{self.cli_args.exp_name}-{self.cli_args.mode}", self.time_str)
+        os.mkdir(self.output_dir)
+
     def init_model(self, sample=None):
         return NotImplementedError
 
@@ -97,10 +108,10 @@ class TrainerBase:
 
     def init_optimizer(self):
         if self.cli_args.sam:
-            optim = SAM(self.model.parameters(), Adam, lr=self.cli_args.learnRate)
+            optim = SAM(self.model.parameters(), Adam, lr=self.t_learnRate)
         else:
-            optim = Adam(self.model.parameters(), lr=self.cli_args.learnRate)
-        decay = self.cli_args.decay
+            optim = Adam(self.model.parameters(), lr=self.t_learnRate)
+        decay = self.t_decay
         scheduler = None
         if decay < 1.0:
             scheduler = torch.optim.lr_scheduler.ExponentialLR(optimizer=optim, gamma=decay, verbose=True)
@@ -129,18 +140,27 @@ class TrainerBase:
 
     def init_tensorboard_writers(self, fold):
         if self.trn_writer is None:
-            log_dir = os.path.join('runs', self.cli_args.tb_prefix, self.time_str)
+            log_dir = os.path.join(self.output_dir, "logs")
 
             self.trn_writer = SummaryWriter(
-                log_dir=f"{log_dir}-{fold}-trn_cls-{self.cli_args.comment}"
+                log_dir=f"{log_dir}-{fold}-trn_cls"
             )
             self.val_writer = SummaryWriter(
-                log_dir=f"{log_dir}-{fold}-val_cls-{self.cli_args.comment}"
+                log_dir=f"{log_dir}-{fold}-val_cls"
             )
 
     def main(self):
         log.info("Starting {}, {}".format(type(self).__name__, self.cli_args))
 
+        assert self.cli_args.mode in ["train", "tune"], "Only train or tune are allowed modes"
+        log.info(f"********** MODE = {self.cli_args.mode} *****************")
+
+        if self.cli_args.mode == "train":
+            self.main_training()
+        else:
+            self.tune()
+
+    def main_training(self):
         # Load chunks file
         if self.cli_args.dset == "ltp":
             _df = pd.read_csv(self.cli_args.datapoints, sep="\t")
@@ -148,9 +168,6 @@ class TrainerBase:
             log.info(f'Found a total of {tot_folds} folds to process')
         else:
             tot_folds = 1
-
-        assert self.cli_args.mode in ["train", "tune"], "Only train or tune are allowed modes"
-        log.info(f"********** MODE = {self.cli_args.mode} *****************")
 
         for fold in range(tot_folds):
             # Print
@@ -180,13 +197,13 @@ class TrainerBase:
             self.model = self.init_model(sample=sample)
             log.info('Model initialized')
             self.totalTrainingSamples_count = 0
+
+            # Optimizer
             self.optimizer, self.scheduler = self.init_optimizer()
             log.info('Optimizer initialized')
 
-            # If early stopping initialise
-            es = None
-            if self.cli_args.earlystopping:
-                es = EarlyStopping(patience=self.cli_args.earlystopping)
+            # Early stopping class tracks the best validation loss
+            es = EarlyStopping(patience=self.cli_args.earlystopping)
 
             # If model is using cnn_finetune, we need to update the transform with the new
             # mean and std deviation values
@@ -222,13 +239,26 @@ class TrainerBase:
                 val_metrics_t = self.do_validation(fold, epoch_ndx, val_dl)
                 self.log_metrics(fold, epoch_ndx, 'val', val_metrics_t)
 
-                if es:
-                    es(val_metrics_t[METRICS_LOSS_NDX].mean())
+                # Checkpoint if it's the best model
+                val_loss = val_metrics_t[METRICS_LOSS_NDX].mean()
+                es(val_loss)
+                if val_loss < es.best_loss:
+                    checkpoint = {
+                        "EPOCH": epoch_ndx,
+                        "model_state_dict": self.model.state_dict(),
+                        "optimizer_state_dict": self.optimizer.state_dict(),
+                        "LOSS": val_loss
+                    }
+                    ch_path = os.path.join(self.output_dir,
+                                           f"model-{self.cli_args.exp_name}-fold{fold}-epoch{epoch_ndx}.pth")
+                    torch.save(checkpoint, ch_path)
+
+                if self.cli_args.earlystopping:
                     if es.early_stop:
                         break
 
-            model_path = os.path.join(pathlib.Path(os.environ["DTORROOT"]),
-                                      f"results/model-{self.cli_args.tb_prefix}-fold{fold}.pth")
+            model_path = os.path.join(self.output_dir,
+                                      f"model-{self.cli_args.exp_name}-fold{fold}.pth")
             torch.save(self.model.state_dict(), model_path)
 
             if hasattr(self, 'trn_writer'):
@@ -239,7 +269,7 @@ class TrainerBase:
             self.val_writer = None
 
         # Save CLI args
-        cli_name = f'results/model-{self.cli_args.tb_prefix}-{time.strftime("%Y%m%d-%H%M%S")}.json'
+        cli_name = os.path.join(self.output_dir, 'options.json')
         with open(cli_name, 'w') as f:
             json.dump(self.cli_args.__dict__, f, indent=2)
 
@@ -316,12 +346,7 @@ class TrainerBase:
 
         CE = nn.CrossEntropyLoss(reduction='none', weight = self.weights)
         if "focal" in self.cli_args.loss.lower():
-            loss_string = self.cli_args.loss
-            parts = loss_string.split("_")
-            assert len(parts) == 3, "Focal loss requires 'focal_ALPHA_BETA' formatting"
-            alpha = float(parts[1])
-            gamma = float(parts[2])
-            loss_g = focal_loss(CE(logits_g, label_g), label_g, gamma, alpha)
+            loss_g = focal_loss(CE(logits_g, label_g), label_g, self.t_gamma, self.t_alpha)
         else:
             loss_g = CE(logits_g, label_g)
         
@@ -354,25 +379,8 @@ class TrainerBase:
             type(self).__name__,
         ))
 
-        neg_label_mask = metrics_t[METRICS_LABEL_NDX] <= classification_threshold
-        neg_pred_mask = metrics_t[METRICS_PRED_NDX] <= classification_threshold
-
-        pos_label_mask = ~neg_label_mask
-        pos_pred_mask = ~neg_pred_mask
-
-        neg_count = int(neg_label_mask.sum())
-        pos_count = int(pos_label_mask.sum())
-
-        neg_correct = int((neg_label_mask & neg_pred_mask).sum())
-        pos_correct = int((pos_label_mask & pos_pred_mask).sum())
-
-        metrics_dict = {'loss/all': metrics_t[METRICS_LOSS_NDX].mean(),
-                        'loss/neg': metrics_t[METRICS_LOSS_NDX, neg_label_mask].mean(),
-                        'loss/pos': metrics_t[METRICS_LOSS_NDX, pos_label_mask].mean(),
-                        'correct/all': (pos_correct + neg_correct) \
-                                       / np.float32(metrics_t.shape[1]) * 100,
-                        'correct/neg': neg_correct / np.float32(neg_count) * 100,
-                        'correct/pos': pos_correct / np.float32(pos_count) * 100}
+        metrics_dict, pos_count, neg_count, pos_correct, neg_correct\
+            = process_metrics(metrics_t, classification_threshold)
 
         log.info(
             ("F{} E{} {:8} {loss/all:.4f} loss, "
@@ -391,8 +399,6 @@ class TrainerBase:
                 fold,
                 epoch_ndx,
                 mode_str + '_neg',
-                neg_correct=neg_correct,
-                neg_count=neg_count,
                 **metrics_dict,
             )
         )
@@ -403,8 +409,6 @@ class TrainerBase:
                 fold,
                 epoch_ndx,
                 mode_str + '_pos',
-                pos_correct=pos_correct,
-                pos_count=pos_count,
                 **metrics_dict,
             )
         )
@@ -423,8 +427,8 @@ class TrainerBase:
 
         bins = [x / 50.0 for x in range(51)]
 
-        neg_hist_mask = neg_label_mask & (metrics_t[METRICS_PRED_NDX] > 0.01)
-        pos_hist_mask = pos_label_mask & (metrics_t[METRICS_PRED_NDX] < 0.99)
+        neg_hist_mask = metrics_dict['neg_label_mask'] & (metrics_t[METRICS_PRED_NDX] > 0.01)
+        pos_hist_mask = metrics_dict['pos_label_mask'] & (metrics_t[METRICS_PRED_NDX] < 0.99)
 
         if neg_hist_mask.any():
             writer.add_histogram(
@@ -440,6 +444,83 @@ class TrainerBase:
                 self.totalTrainingSamples_count,
                 bins=bins,
             )
+
+    def tune_train(self, trial):
+
+        # Initialize tuneable params
+        self.init_tune(trial)
+
+        # Optimizer
+        self.optimizer, self.scheduler = self.init_optimizer()
+        log.info('Optimizer initialized')
+
+        # Early stopping class tracks the best validation loss
+        es = EarlyStopping(patience=self.cli_args.earlystopping)
+
+        # Training loop
+        val_metrics_t = None
+        for epoch_ndx in range(1, self.cli_args.epochs + 1):
+            self.do_training(0, epoch_ndx, self.train_dl)
+            val_metrics_t = self.do_validation(0, epoch_ndx, self.val_dl)
+
+            val_loss = val_metrics_t[METRICS_LOSS_NDX].mean()
+            es(val_loss)
+
+            if self.cli_args.earlystopping:
+                if es.early_stop:
+                    break
+
+        obj = from_metrics_f1(val_metrics_t)
+        return - obj
+
+    def tune(self):
+        log.info('Initializing model and data')
+
+        # Data
+        mean, std = norms[self.cli_args.norm]
+        train_ds, val_ds, self.train_dl, self.val_dl = self.init_data(0, mean=mean, std=std)
+
+        # If model is using cnn_finetune, we need to update the transform with the new
+        # mean and std deviation values
+        try:
+            dpm = self.model if not self.use_cuda else self.model.module
+        except nn.modules.module.ModuleAttributeError:
+            dpm = self.model
+
+        if hasattr(dpm, "original_model_info"):
+            log.info('*******************USING PRETRAINED MODEL*********************')
+            mean = dpm.original_model_info.mean
+            std = dpm.original_model_info.std
+            train_ds, val_ds, self.train_dl, self.val_dl = self.init_data(0, mean=mean, std=std)
+
+        log.info('*******************NORMALISATION DETAILS*********************')
+        log.info(f"preprocessing mean: {mean}, std: {std}")
+
+        # Get a sample batch
+        sample = []
+        for n, point in enumerate(self.train_dl):
+            if n == 1:
+                break
+            x = point[0]
+            sample.append(x)
+        sample = torch.cat(sample, dim=0)
+
+        # Generate weights
+        self.weights = get_class_weights(train_ds)
+        self.weights = self.weights.to(self.device)
+
+        # Model initialisation
+        self.model = self.init_model(sample=sample)
+
+        study = optuna.create_study()
+
+        study.optimize(self.tune_train, n_jobs=1, n_trials=10)
+
+        # Save best params
+        print(f"Best config: {study.best_params}")
+        bp_name = os.path.join(self.output_dir, 'best_params.json')
+        with open(bp_name, 'w') as f:
+            json.dump(study.best_params, f, indent=2)
 
 
 class Trainer(TrainerBase):
@@ -474,14 +555,12 @@ class Trainer(TrainerBase):
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
 
-    def init_tune(self):
-        config = {
-            "l1": tune.sample_from(lambda _: 2**np.random.randint(2, 9)),
-            "l2": tune.sample_from(lambda _: 2**np.random.randint(2, 9)),
-            "lr": tune.loguniform(1e-4, 1e-1),
-            "batch_size": tune.choice([2, 4, 8, 16])
-        }
-        return config
+    def init_tune(self, trial):
+        self.t_learnRate = trial.suggest_loguniform('opt_learning_rate', 1e-6, 1e-3)
+        self.t_decay = trial.suggest_uniform('opt_learning_rate_decay', 0.9, 0.99)
+        self.t_alpha = trial.suggest_uniform('opt_alpha', 0.5, 3.0)
+        self.t_gamma = trial.suggest_uniform('opt_gamma', 0.5, 5.0)
+        return
 
 
 if __name__ == '__main__':
