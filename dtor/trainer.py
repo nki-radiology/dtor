@@ -95,7 +95,7 @@ class TrainerBase:
 
         # Make results directory
         self.output_dir = os.path.join("results", f"{self.cli_args.exp_name}-{self.cli_args.mode}", self.time_str)
-        os.mkdir(self.output_dir)
+        os.makedirs(self.output_dir)
 
     def init_model(self, sample=None):
         return NotImplementedError
