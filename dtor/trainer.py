@@ -480,6 +480,22 @@ class TrainerBase:
         mean, std = norms[self.cli_args.norm]
         train_ds, val_ds, self.train_dl, self.val_dl = self.init_data(0, mean=mean, std=std)
 
+        # Get a sample batch
+        sample = []
+        for n, point in enumerate(self.train_dl):
+            if n == 1:
+                break
+            x = point[0]
+            sample.append(x)
+        sample = torch.cat(sample, dim=0)
+
+        # Generate weights
+        self.weights = get_class_weights(train_ds)
+        self.weights = self.weights.to(self.device)
+
+        # Model initialisation
+        self.model = self.init_model(sample=sample)
+        
         # If model is using cnn_finetune, we need to update the transform with the new
         # mean and std deviation values
         try:
@@ -496,21 +512,6 @@ class TrainerBase:
         log.info('*******************NORMALISATION DETAILS*********************')
         log.info(f"preprocessing mean: {mean}, std: {std}")
 
-        # Get a sample batch
-        sample = []
-        for n, point in enumerate(self.train_dl):
-            if n == 1:
-                break
-            x = point[0]
-            sample.append(x)
-        sample = torch.cat(sample, dim=0)
-
-        # Generate weights
-        self.weights = get_class_weights(train_ds)
-        self.weights = self.weights.to(self.device)
-
-        # Model initialisation
-        self.model = self.init_model(sample=sample)
 
         study = optuna.create_study()
 
