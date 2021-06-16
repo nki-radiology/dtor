@@ -516,7 +516,7 @@ class TrainerBase:
         log.info('*******************NORMALISATION DETAILS*********************')
         log.info(f"preprocessing mean: {mean}, std: {std}")
 
-        self.study = optuna.create_study()
+        self.study = optuna.create_study(study_name=self.cli_args.exp_name)
         self.study.optimize(self.tune_train, n_jobs=1, n_trials=10)
 
         # Save best params
