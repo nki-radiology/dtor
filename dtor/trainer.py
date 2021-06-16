@@ -26,7 +26,7 @@ from dtor.utilities.torchutils import process_metrics, \
 from dtor.loss.sam import SAM
 import joblib
 import optuna
-
+from optuna.samplers import TPESampler
 from dtor.logconf import enumerate_with_estimate
 from dtor.logconf import logging
 from dtor.utilities.utils import find_folds, get_class_weights
@@ -471,10 +471,11 @@ class TrainerBase:
                 if es.early_stop:
                     break
 
-        try:
-            obj = from_metrics_f1(val_metrics_t)
-        except ValueError:
-            return None
+        obj = from_metrics_f1(val_metrics_t)
+        #try:
+        #    obj = from_metrics_f1(val_metrics_t)
+        #except ValueError:
+        #    return None
         return - obj
 
     def tune(self):
@@ -516,7 +517,7 @@ class TrainerBase:
         log.info('*******************NORMALISATION DETAILS*********************')
         log.info(f"preprocessing mean: {mean}, std: {std}")
 
-        self.study = optuna.create_study(study_name=self.cli_args.exp_name)
+        self.study = optuna.create_study(study_name=self.cli_args.exp_name, sampler=TPESampler(seed=42))
         self.study.optimize(self.tune_train, n_jobs=1, n_trials=10)
 
         # Save best params
