@@ -9,11 +9,9 @@ import os
 import sys
 import random
 import json
-import time
 
 import numpy as np
 import pandas as pd
-import pathlib
 
 import torch
 import torch.nn as nn
@@ -26,11 +24,9 @@ from dtor.utilities.torchutils import process_metrics, \
     METRICS_LOSS_NDX, METRICS_LABEL_NDX, METRICS_PRED_NDX, METRICS_SIZE, \
     from_metrics_f1
 from dtor.loss.sam import SAM
-import torch.nn.functional as F
-
+import joblib
 import optuna
 
-from dtor.loss.diceloss import DiceLoss
 from dtor.logconf import enumerate_with_estimate
 from dtor.logconf import logging
 from dtor.utilities.utils import find_folds, get_class_weights
@@ -59,6 +55,7 @@ class TrainerBase:
         self.scheduler = None
         self.train_dl = None
         self.val_dl = None
+        self.study = None
         self.root_dir = os.environ["DTORROOT"]
 
         parser = init_parser()
@@ -447,6 +444,9 @@ class TrainerBase:
 
     def tune_train(self, trial):
 
+        # Save the study status
+        joblib.dump(self.study, os.path.join(self.output_dir, 'tuning_study.pkl'))
+
         # Initialize tuneable params
         self.init_tune(trial)
 
@@ -462,7 +462,7 @@ class TrainerBase:
         for epoch_ndx in range(1, self.cli_args.epochs + 1):
             self.do_training(0, epoch_ndx, self.train_dl)
             val_metrics_t = self.do_validation(0, epoch_ndx, self.val_dl)
-
+            self.log_metrics(0, epoch_ndx, 'val', val_metrics_t)
             val_loss = val_metrics_t[METRICS_LOSS_NDX].mean()
             es(val_loss)
 
@@ -512,16 +512,14 @@ class TrainerBase:
         log.info('*******************NORMALISATION DETAILS*********************')
         log.info(f"preprocessing mean: {mean}, std: {std}")
 
-
-        study = optuna.create_study()
-
-        study.optimize(self.tune_train, n_jobs=1, n_trials=10)
+        self.study = optuna.create_study()
+        self.study.optimize(self.tune_train, n_jobs=1, n_trials=10)
 
         # Save best params
-        print(f"Best config: {study.best_params}")
+        print(f"Best config: {self.study.best_params}")
         bp_name = os.path.join(self.output_dir, 'best_params.json')
         with open(bp_name, 'w') as f:
-            json.dump(study.best_params, f, indent=2)
+            json.dump(self.study.best_params, f, indent=2)
 
 
 class Trainer(TrainerBase):
@@ -529,12 +527,12 @@ class Trainer(TrainerBase):
         super().__init__()
 
     def init_model(self, sample=None):
-        model = model_choice(self.cli_args.model, 
-                resume=self.cli_args.resume, sample=sample,
-                pretrain_loc=self.cli_args.pretrain_loc,
-                pretrained_2d_name=self.cli_args.pretrained_2d_name,
-                depth=self.cli_args.rn_depth,
-                n_classes=self.cli_args.rn_nclasses, fix_inmodel=self.cli_args.fix_nlayers)
+        model = model_choice(self.cli_args.model,
+                             resume=self.cli_args.resume, sample=sample,
+                             pretrain_loc=self.cli_args.pretrain_loc,
+                             pretrained_2d_name=self.cli_args.pretrained_2d_name,
+                             depth=self.cli_args.rn_depth,
+                             n_classes=self.cli_args.rn_nclasses, fix_inmodel=self.cli_args.fix_nlayers)
 
         if self.use_cuda:
             log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
