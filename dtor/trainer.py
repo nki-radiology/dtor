@@ -415,7 +415,7 @@ class TrainerBase:
         writer = getattr(self, mode_str + '_writer')
 
         for key, value in metrics_dict.items():
-            if value.squeeze().ndim == 0:
+            if type(value) is float or type(value) is int:
                 writer.add_scalar(key, value, self.totalTrainingSamples_count)
 
         writer.add_pr_curve(
