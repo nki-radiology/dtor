@@ -415,7 +415,8 @@ class TrainerBase:
         writer = getattr(self, mode_str + '_writer')
 
         for key, value in metrics_dict.items():
-            writer.add_scalar(key, value, self.totalTrainingSamples_count)
+            if value.squeeze().ndim == 0:
+                writer.add_scalar(key, value, self.totalTrainingSamples_count)
 
         writer.add_pr_curve(
             'pr',
