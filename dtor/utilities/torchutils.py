@@ -44,7 +44,7 @@ def from_metrics_loss(rdict):
 
 
 def from_metrics_f1(rdict):
-    return f1_score(rdict[METRICS_LABEL_NDX], rdict[METRICS_PRED_NDX])
+    return f1_score(rdict[METRICS_LABEL_NDX].numpy(), rdict[METRICS_PRED_NDX].numpy())
 
 
 class EarlyStopping:
