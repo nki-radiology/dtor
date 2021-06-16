@@ -19,6 +19,7 @@ from torch.optim import SGD, Adam
 from torch.utils.data import DataLoader
 from torch.utils.tensorboard import SummaryWriter
 from dtor.utilities.utils import focal_loss
+from dtor.utilities.utils_stats import roc_and_auc
 from dtor.utilities.torchutils import EarlyStopping
 from dtor.utilities.torchutils import process_metrics, \
     METRICS_LOSS_NDX, METRICS_LABEL_NDX, METRICS_PRED_NDX, METRICS_SIZE, \
@@ -471,11 +472,11 @@ class TrainerBase:
                 if es.early_stop:
                     break
 
-        obj = from_metrics_f1(val_metrics_t)
-        #try:
-        #    obj = from_metrics_f1(val_metrics_t)
-        #except ValueError:
-        #    return None
+        try:
+            obj, _, _ = roc_and_auc(val_metrics_t[METRICS_PRED_NDX].numpy(),
+                                    val_metrics_t[METRICS_LABEL_NDX].numpy())
+        except ValueError:
+            return None
         return - obj
 
     def tune(self):

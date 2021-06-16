@@ -43,6 +43,7 @@ def from_metrics_loss(rdict):
     return rdict[METRICS_LOSS_NDX].mean()
 
 
+# TODO: FIX
 def from_metrics_f1(rdict):
     return f1_score(rdict[METRICS_LABEL_NDX].numpy(), rdict[METRICS_PRED_NDX].numpy())
 
