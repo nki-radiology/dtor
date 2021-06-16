@@ -460,7 +460,8 @@ class TrainerBase:
         # Training loop
         val_metrics_t = None
         for epoch_ndx in range(1, self.cli_args.epochs + 1):
-            self.do_training(0, epoch_ndx, self.train_dl)
+            trn_metrics_t = self.do_training(0, epoch_ndx, self.train_dl)
+            self.log_metrics(0, epoch_ndx, 'trn', trn_metrics_t)
             val_metrics_t = self.do_validation(0, epoch_ndx, self.val_dl)
             self.log_metrics(0, epoch_ndx, 'val', val_metrics_t)
             val_loss = val_metrics_t[METRICS_LOSS_NDX].mean()
@@ -470,7 +471,10 @@ class TrainerBase:
                 if es.early_stop:
                     break
 
-        obj = from_metrics_f1(val_metrics_t)
+        try:
+            obj = from_metrics_f1(val_metrics_t)
+        except ValueError:
+            return None
         return - obj
 
     def tune(self):
