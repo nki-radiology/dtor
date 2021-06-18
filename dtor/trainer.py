@@ -66,6 +66,10 @@ class TrainerBase:
                 args.__dict__.update(json.load(f))
         self.cli_args = args
 
+        if self.cli_args.best_json:
+            with open(self.cli_args.best_json, 'r') as f:
+                self.cli_args.__dict__.update(json.load(f))
+
         self.use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
 
