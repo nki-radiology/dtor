@@ -71,6 +71,12 @@ def init_parser():
                         nargs='?',
                         default="",
                         )
+    parser.add_argument('--best_json',
+                        help="Specify args with best hyperparams",
+                        type=str,
+                        nargs='?',
+                        default="",
+                        )
     parser.add_argument('--dset',
                         help="Which dataset to use",
                         type=str,
