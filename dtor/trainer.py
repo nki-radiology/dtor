@@ -522,7 +522,7 @@ class TrainerBase:
         log.info(f"preprocessing mean: {mean}, std: {std}")
 
         self.study = optuna.create_study(study_name=self.cli_args.exp_name, sampler=TPESampler(seed=42))
-        self.study.optimize(self.tune_train, n_jobs=1, n_trials=10)
+        self.study.optimize(self.tune_train, n_jobs=1, n_trials=self.cli_args.num_trials)
 
         # Save best params
         print(f"Best config: {self.study.best_params}")

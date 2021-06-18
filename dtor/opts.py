@@ -125,6 +125,12 @@ def init_parser():
                         nargs='?',
                         default=3,
                         )
+    parser.add_argument('--num_trials',
+                        help="How many trials for the tuning",
+                        type=int,
+                        nargs='?',
+                        default=10,
+                        )
     parser.add_argument('--mode',
                         help="train | tune",
                         type=str,
@@ -135,7 +141,7 @@ def init_parser():
                         help="How many layers of the input model do we fix",
                         type=int,
                         nargs='?',
-                        default=95,
+                        default=0,
                         )
     parser.add_argument('--rn_depth',
                         help="How big a resnet do you want",
