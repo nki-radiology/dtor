@@ -17,7 +17,7 @@ import torch
 
 
 def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, pretrained_2d_name=None, 
-        depth=101, n_classes=700, fix_inmodel=95):
+        depth=101, n_classes=700, fix_inmodel=0):
     assert m_name in ["pretrained_2d", "nominal", "resnet+dense", "unet"]
 
     if m_name == "nominal":
@@ -37,6 +37,13 @@ def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, 
     elif m_name == 'pretrained_2d':
         model = make_model(pretrained_2d_name, num_classes=2, pretrained=True, input_size=(214, 214),
                            classifier_factory=make_classifier)
+        if fix_inmodel:
+            assert isinstance(fix_inmodel, int), "Tell me how many layers to fix"
+            for n, l in enumerate(model.children()):
+                if n < fix_inmodel:
+                    continue
+                for param in l.parameters():
+                    param.requires_grad = False
     elif m_name == "unet":
         modela = UNet(1, [32, 48, 64, 96, 128], 3, net_mode='3d', conv_block=RecombinationBlock)
         if pretrain_loc:

@@ -56,6 +56,7 @@ class TrainerBase:
         self.train_dl = None
         self.val_dl = None
         self.study = None
+        self.sample = None
         self.root_dir = os.environ["DTORROOT"]
 
         parser = init_parser()
@@ -80,6 +81,8 @@ class TrainerBase:
             torch.backends.cudnn.benchmark = False
 
         # Make all tunable hyperparameters members
+        self.patience = self.cli_args.earlystopping
+        self.fix_nlayers = self.cli_args.fix_nlayers
         self.t_learnRate = self.cli_args.learnRate
         self.t_decay = self.cli_args.decay
         if "focal" in self.cli_args.loss.lower():
@@ -197,7 +200,7 @@ class TrainerBase:
             log.info('Optimizer initialized')
 
             # Early stopping class tracks the best validation loss
-            es = EarlyStopping(patience=self.cli_args.earlystopping)
+            es = EarlyStopping(patience=self.patience)
 
             # If model is using cnn_finetune, we need to update the transform with the new
             # mean and std deviation values
@@ -452,7 +455,10 @@ class TrainerBase:
         log.info('Optimizer initialized')
 
         # Early stopping class tracks the best validation loss
-        es = EarlyStopping(patience=self.cli_args.earlystopping)
+        es = EarlyStopping(patience=self.patience)
+
+        # Reinitialize model with new fixed layers
+        self.model = self.init_model(sample=self.sample)
 
         # Training loop
         val_metrics_t = None
@@ -490,14 +496,14 @@ class TrainerBase:
                 break
             x = point[0]
             sample.append(x)
-        sample = torch.cat(sample, dim=0)
+        self.sample = torch.cat(sample, dim=0)
 
         # Generate weights
         self.weights = get_class_weights(train_ds)
         self.weights = self.weights.to(self.device)
 
         # Model initialisation
-        self.model = self.init_model(sample=sample)
+        self.model = self.init_model(sample=self.sample)
         
         # If model is using cnn_finetune, we need to update the transform with the new
         # mean and std deviation values
@@ -535,7 +541,7 @@ class Trainer(TrainerBase):
                              pretrain_loc=self.cli_args.pretrain_loc,
                              pretrained_2d_name=self.cli_args.pretrained_2d_name,
                              depth=self.cli_args.rn_depth,
-                             n_classes=self.cli_args.rn_nclasses, fix_inmodel=self.cli_args.fix_nlayers)
+                             n_classes=self.cli_args.rn_nclasses, fix_inmodel=self.fix_nlayers)
 
         if self.use_cuda:
             log.info("Using CUDA; {} devices.".format(torch.cuda.device_count()))
@@ -553,7 +559,7 @@ class Trainer(TrainerBase):
                                         mean=mean, std=std, dim=self.cli_args.dim, limit=self.cli_args.dset_lim)
         else:
             train_ds, val_ds = get_data(self.cli_args.dset, self.cli_args.datapoints, fold, aug=aug,
-                    dim=self.cli_args.dim, limit=self.cli_args.dset_lim)
+                                        dim=self.cli_args.dim, limit=self.cli_args.dset_lim)
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
 
@@ -562,6 +568,10 @@ class Trainer(TrainerBase):
         self.t_decay = trial.suggest_uniform('decay', 0.9, 0.99)
         self.t_alpha = trial.suggest_uniform('focal_alpha', 0.5, 3.0)
         self.t_gamma = trial.suggest_uniform('focal_gamma', 0.5, 5.0)
+        self.patience = trial.suggest_int('earlystopping', 3, 6)
+        if self.fix_nlayers:
+            self.fix_nlayers = trial.suggest_int('fix_nlayers', 3, 6)
+
         return
 
 
