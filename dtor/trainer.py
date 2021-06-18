@@ -22,8 +22,7 @@ from dtor.utilities.utils import focal_loss
 from dtor.utilities.utils_stats import roc_and_auc
 from dtor.utilities.torchutils import EarlyStopping
 from dtor.utilities.torchutils import process_metrics, \
-    METRICS_LOSS_NDX, METRICS_LABEL_NDX, METRICS_PRED_NDX, METRICS_SIZE, \
-    from_metrics_f1
+    METRICS_LOSS_NDX, METRICS_LABEL_NDX, METRICS_PRED_NDX, METRICS_SIZE
 from dtor.loss.sam import SAM
 import joblib
 import optuna
@@ -65,7 +64,6 @@ class TrainerBase:
             with open(args.load_json, 'r') as f:
                 args.__dict__.update(json.load(f))
         self.cli_args = args
-        self.time_str = datetime.datetime.now().strftime('%Y-%m-%d_%H.%M.%S')
 
         self.use_cuda = torch.cuda.is_available()
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
@@ -85,14 +83,12 @@ class TrainerBase:
         self.t_learnRate = self.cli_args.learnRate
         self.t_decay = self.cli_args.decay
         if "focal" in self.cli_args.loss.lower():
-            loss_string = self.cli_args.loss
-            parts = loss_string.split("_")
-            assert len(parts) == 3, "Focal loss requires 'focal_ALPHA_BETA' formatting"
-            self.t_alpha = float(parts[1])
-            self.t_gamma = float(parts[2])
+            self.t_alpha = self.cli_args.focal_alpha
+            self.t_gamma = self.cli_args.focal_gamma
 
         # Make results directory
-        self.output_dir = os.path.join("results", f"{self.cli_args.exp_name}-{self.cli_args.mode}", self.time_str)
+        self.output_dir = os.path.join("results", f"{self.cli_args.exp_name}-{self.cli_args.mode}")
+        assert not os.path.exists(self.output_dir), "Choose a unique experiment name or clean up after yourself :-)"
         os.makedirs(self.output_dir)
 
     def init_model(self, sample=None):
@@ -101,7 +97,7 @@ class TrainerBase:
     def init_data(self, fold, mean=None, std=None):
         return NotImplementedError
 
-    def init_tune(self):
+    def init_tune(self, train):
         return NotImplementedError
 
     def init_optimizer(self):
@@ -562,10 +558,10 @@ class Trainer(TrainerBase):
         return train_ds, val_ds, train_dl, val_dl
 
     def init_tune(self, trial):
-        self.t_learnRate = trial.suggest_loguniform('opt_learning_rate', 1e-6, 1e-3)
-        self.t_decay = trial.suggest_uniform('opt_learning_rate_decay', 0.9, 0.99)
-        self.t_alpha = trial.suggest_uniform('opt_alpha', 0.5, 3.0)
-        self.t_gamma = trial.suggest_uniform('opt_gamma', 0.5, 5.0)
+        self.t_learnRate = trial.suggest_loguniform('learnRate', 1e-6, 1e-3)
+        self.t_decay = trial.suggest_uniform('decay', 0.9, 0.99)
+        self.t_alpha = trial.suggest_uniform('focal_alpha', 0.5, 3.0)
+        self.t_gamma = trial.suggest_uniform('focal_gamma', 0.5, 5.0)
         return
 
 
