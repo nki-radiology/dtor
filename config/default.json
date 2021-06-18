@@ -19,6 +19,7 @@
   "resume": "",
   "pretrain_loc": "/DATA/sb/pretraining/3D-zoo-pytorch/r3d101_K_200ep.pth",
   "dim" : 3,
+  "earlystopping": 5,
   "norm": "torchvision_3d",
   "sam": true,
   "dset_lim": 200,
