@@ -43,6 +43,7 @@ def bbox3d(img, _min=0, _buffer=0):
     Returns: Indices of bounding box
 
     """
+    print(f"Image shape: {img.shape}")
 
     r = np.any(img, axis=(1, 2))
     c = np.any(img, axis=(0, 2))
@@ -55,7 +56,6 @@ def bbox3d(img, _min=0, _buffer=0):
     _rm = img.shape[0]-_buffer-1
     _cm = img.shape[1]-_buffer-1
     _zm = img.shape[2]-_buffer-1
-    print(f"Image shape: {img.shape}")
     
     return max(rmin, _buffer+1)-_buffer, min(rmax, _rm)+_buffer, max(cmin, _buffer+1)-_buffer, min(cmax, _cm)+_buffer, max(zmin, _buffer+1)-_buffer, max(zmax, _zm)+_buffer
 

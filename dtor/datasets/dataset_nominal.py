@@ -77,8 +77,8 @@ class CTImageDataset(Dataset):
             cols = list(self.images_frame.columns.values)
             cols = [c for c in cols if "Unnamed" not in c]
             self.images_frame = self.images_frame[cols].dropna()
-            self.images_frame.drop_duplicates(subset=["StudyID", "Abl_no"], inplace=True)
-            self.images_frame.index = range(len(self.images_frame))
+            #self.images_frame.drop_duplicates(subset=["StudyID", "Abl_no"], inplace=True)
+            #self.images_frame.index = range(len(self.images_frame))
             #
             self.chunked_images = self.expand_points(shape, stride, label, tot_folds)
 
@@ -143,7 +143,8 @@ class CTImageDataset(Dataset):
                 continue
             abl = str(int(self.images_frame.loc[n1, 'Abl_no']))
             _label = str(int(self.images_frame.loc[n1, label]))
-            print(f"Processing patient/abl ID: {patient}/{abl}")
+            annot = int(self.images_frame.loc[n1, 'L_Label'])
+            print(f"Processing patient/abl ID/annot: {patient}/{abl}/{annot}")
 
             # Load in cropped arrays
             o_liver_post = npy_name("liver_post", patient, abl)
@@ -159,10 +160,14 @@ class CTImageDataset(Dataset):
             tumor_post = np.load(o_tumor_post)
 
             # Crop around each ablation zone
-            a = int(self.images_frame.loc[n1, 'L_Label'])
+            a = annot
 
             c_tumor_post = np.where(tumor_post == a, 1, 0)
-            a_box = bbox3d(c_tumor_post, _buffer=self.buffer)
+            try:
+                a_box = bbox3d(c_tumor_post, _buffer=self.buffer)
+            except IndexError:
+                print("Unsuccessful ROI identification, skipping...")
+                continue
             cc_tumor_post = crop3d(c_tumor_post, a_box)
             cc_liver_post = crop3d(liver_post, a_box)
             cc_liver_pre = crop3d(liver_pre, a_box)
