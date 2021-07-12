@@ -453,6 +453,23 @@ class TrainerBase:
 
         # Initialize tuneable params
         self.init_tune(trial)
+        
+        # Model initialisation
+        if self.fix_nlayers:
+            self.model = self.init_model(sample=self.sample)
+            
+            # If model is using cnn_finetune, we need to update the transform with the new
+            # mean and std deviation values
+            try:
+                dpm = self.model if not self.use_cuda else self.model.module
+            except nn.modules.module.ModuleAttributeError:
+                dpm = self.model
+
+            if hasattr(dpm, "original_model_info"):
+                log.info('*******************USING PRETRAINED MODEL*********************')
+                mean = dpm.original_model_info.mean
+                std = dpm.original_model_info.std
+                train_ds, val_ds, self.train_dl, self.val_dl = self.init_data(0, mean=mean, std=std)
 
         # Optimizer
         self.optimizer, self.scheduler = self.init_optimizer()
@@ -460,9 +477,6 @@ class TrainerBase:
 
         # Early stopping class tracks the best validation loss
         es = EarlyStopping(patience=self.patience)
-
-        # Reinitialize model with new fixed layers
-        self.model = self.init_model(sample=self.sample)
 
         # Training loop
         val_metrics_t = None
@@ -507,23 +521,24 @@ class TrainerBase:
         self.weights = self.weights.to(self.device)
 
         # Model initialisation
-        self.model = self.init_model(sample=self.sample)
+        if not self.fix_nlayers:
+            self.model = self.init_model(sample=self.sample)
         
-        # If model is using cnn_finetune, we need to update the transform with the new
-        # mean and std deviation values
-        try:
-            dpm = self.model if not self.use_cuda else self.model.module
-        except nn.modules.module.ModuleAttributeError:
-            dpm = self.model
+            # If model is using cnn_finetune, we need to update the transform with the new
+            # mean and std deviation values
+            try:
+                dpm = self.model if not self.use_cuda else self.model.module
+            except nn.modules.module.ModuleAttributeError:
+                dpm = self.model
 
-        if hasattr(dpm, "original_model_info"):
-            log.info('*******************USING PRETRAINED MODEL*********************')
-            mean = dpm.original_model_info.mean
-            std = dpm.original_model_info.std
-            train_ds, val_ds, self.train_dl, self.val_dl = self.init_data(0, mean=mean, std=std)
+            if hasattr(dpm, "original_model_info"):
+                log.info('*******************USING PRETRAINED MODEL*********************')
+                mean = dpm.original_model_info.mean
+                std = dpm.original_model_info.std
+                train_ds, val_ds, self.train_dl, self.val_dl = self.init_data(0, mean=mean, std=std)
 
-        log.info('*******************NORMALISATION DETAILS*********************')
-        log.info(f"preprocessing mean: {mean}, std: {std}")
+            log.info('*******************NORMALISATION DETAILS*********************')
+            log.info(f"preprocessing mean: {mean}, std: {std}")
 
         self.study = optuna.create_study(study_name=self.cli_args.exp_name, sampler=TPESampler(seed=42))
         self.study.optimize(self.tune_train, n_jobs=1, n_trials=self.cli_args.num_trials)
