@@ -312,6 +312,7 @@ def safe_restore(_model, state_loc):
         try:
             _d = torch.load(state_loc,  map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu"))
             _d = _d['state_dict']
+
             _model.load_state_dict(_d)
         except RuntimeError:
             _d = torch.load(state_loc,  map_location=torch.device('cuda' if torch.cuda.is_available() else "cpu"))
