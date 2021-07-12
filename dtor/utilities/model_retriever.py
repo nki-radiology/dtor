@@ -39,11 +39,14 @@ def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, 
                            classifier_factory=make_classifier)
         if fix_inmodel:
             assert isinstance(fix_inmodel, int), "Tell me how many layers to fix"
-            for n, l in enumerate(model.children()):
-                if n < fix_inmodel:
-                    continue
-                for param in l.parameters():
-                    param.requires_grad = False
+            for n_o, l in enumerate(model.children()):
+                for n, l_i in enumerate(l.children()):
+                    if n < fix_inmodel:
+                        for param in l.parameters():
+                            param.requires_grad = False
+                    else:
+                        continue
+                break # only fix feature extractor
     elif m_name == "unet":
         modela = UNet(1, [32, 48, 64, 96, 128], 3, net_mode='3d', conv_block=RecombinationBlock)
         if pretrain_loc:
@@ -99,3 +102,16 @@ def make_classifier(in_features, num_classes):
         nn.ReLU(inplace=True),
         nn.Linear(4096, num_classes),
     )
+
+
+def update_fixed(_model, nfixed):
+    for n, l in enumerate(_model.children()):
+        if n==0:
+            print(l.parameters())
+        if n < nfixed:
+            for param in l.parameters():
+                param.requires_grad = False
+        else:
+            for param in l.parameters():
+                param.requires_grad = True
+    

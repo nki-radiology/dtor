@@ -11,9 +11,10 @@ class ModelB(nn.Module):
             assert isinstance(fix_inmodel,int), "Tell me how many layers to fix"
             for n, l in enumerate(self.modelA.children()):
                 if n<fix_inmodel:
+                    for param in l.parameters():
+                        param.requires_grad = False
+                else:
                     continue
-                for param in l.parameters():
-                    param.requires_grad = False
 
         self.classifier = nn.Linear(base_output_shape, output_classes)
         self.head_softmax = nn.Softmax(dim=1)
