@@ -74,15 +74,7 @@ class TrainerBase:
         self.device = torch.device("cuda" if self.use_cuda else "cpu")
 
         # Needed to make training reproducible
-        seed_value = self.cli_args.seed
-        np.random.seed(seed_value)
-        torch.manual_seed(seed_value)
-        random.seed(seed_value)
-        if self.use_cuda: 
-            torch.cuda.manual_seed(seed_value)
-            torch.cuda.manual_seed_all(seed_value)
-            torch.backends.cudnn.deterministic = True
-            torch.backends.cudnn.benchmark = False
+        self.reset_seeds()
 
         # Make all tunable hyperparameters members
         self.patience = self.cli_args.earlystopping
@@ -97,6 +89,17 @@ class TrainerBase:
         self.output_dir = os.path.join("results", f"{self.cli_args.exp_name}-{self.cli_args.mode}")
         assert not os.path.exists(self.output_dir), "Choose a unique experiment name or clean up after yourself :-)"
         os.makedirs(self.output_dir)
+
+    def reset_seeds(self):
+        seed_value = self.cli_args.seed
+        np.random.seed(seed_value)
+        torch.manual_seed(seed_value)
+        random.seed(seed_value)
+        if self.use_cuda:
+            torch.cuda.manual_seed(seed_value)
+            torch.cuda.manual_seed_all(seed_value)
+            torch.backends.cudnn.deterministic = True
+            torch.backends.cudnn.benchmark = False
 
     def init_model(self, sample=None):
         return NotImplementedError
@@ -455,21 +458,22 @@ class TrainerBase:
         self.init_tune(trial)
         
         # Model initialisation
-        if self.fix_nlayers:
-            self.model = self.init_model(sample=self.sample)
-            
-            # If model is using cnn_finetune, we need to update the transform with the new
-            # mean and std deviation values
-            try:
-                dpm = self.model if not self.use_cuda else self.model.module
-            except nn.modules.module.ModuleAttributeError:
-                dpm = self.model
+        #if self.fix_nlayers:
+        self.reset_seeds()
+        self.model = self.init_model(sample=self.sample)
 
-            if hasattr(dpm, "original_model_info"):
-                log.info('*******************USING PRETRAINED MODEL*********************')
-                mean = dpm.original_model_info.mean
-                std = dpm.original_model_info.std
-                train_ds, val_ds, self.train_dl, self.val_dl = self.init_data(0, mean=mean, std=std)
+        # If model is using cnn_finetune, we need to update the transform with the new
+        # mean and std deviation values
+        try:
+            dpm = self.model if not self.use_cuda else self.model.module
+        except nn.modules.module.ModuleAttributeError:
+            dpm = self.model
+
+        if hasattr(dpm, "original_model_info"):
+            log.info('*******************USING PRETRAINED MODEL*********************')
+            mean = dpm.original_model_info.mean
+            std = dpm.original_model_info.std
+            train_ds, val_ds, self.train_dl, self.val_dl = self.init_data(0, mean=mean, std=std)
 
         # Optimizer
         self.optimizer, self.scheduler = self.init_optimizer()
