@@ -346,7 +346,7 @@ class TrainerBase:
         input_g = input_t.to(self.device, non_blocking=True)
         label_g = label_t.to(self.device, non_blocking=True)
 
-        input_g=input_g.float()
+        input_g = input_g.float()
         if self.cli_args.dim == 2:
             logits_g = self.model(input_g)
             probability_g = nn.Softmax(dim=1)(logits_g)
@@ -464,7 +464,6 @@ class TrainerBase:
         
         # Model initialisation
         #if self.fix_nlayers:
-        self.reset_torch_seeds()
         self.model = self.init_model(sample=self.sample)
 
         # If model is using cnn_finetune, we need to update the transform with the new
