@@ -88,8 +88,6 @@ class TrainerBase:
 
         # Make results directory
         self.output_dir = os.path.join("results", f"{self.cli_args.exp_name}-{self.cli_args.mode}")
-        assert not os.path.exists(self.output_dir), "Choose a unique experiment name or clean up after yourself :-)"
-        os.makedirs(self.output_dir)
 
     def reset_torch_seeds(self):
         seed_value = self.cli_args.seed
@@ -159,6 +157,10 @@ class TrainerBase:
             )
 
     def main(self):
+        # Make the output folder
+        assert not os.path.exists(self.output_dir), "Choose a unique experiment name or clean up after yourself :-)"
+        os.makedirs(self.output_dir)
+
         log.info("Starting {}, {}".format(type(self).__name__, self.cli_args))
 
         assert self.cli_args.mode in ["train", "tune"], "Only train or tune are allowed modes"
