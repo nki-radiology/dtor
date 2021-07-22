@@ -39,7 +39,9 @@ sys.argv.extend(["--load_json", "/home/marjaneh/ltp-prediction/results/test-trai
 
 #%%
 # Process folds
-res_preds = []
+# Concatenate results of the folds
+y_preds_total = []
+y_labels_total = []
 for f in range(tot_fold):
     # Load test data
    # data = CTImageDataset(fold=f, tr_test="test", chunked_csv="/home/marjaneh/ltp-prediction/data/chunked.csv", dim=2)
@@ -72,14 +74,6 @@ for f in range(tot_fold):
     for n in range(len(val_ds)):
         f, truth, extra = val_ds[n]
 
-        key = '_'.join(extra[1].split('_')[:2])
-        weight = extra[0]
-        true_key = f"{key}_truth"
-        weights_key = f"{key}_weights"
-        if key not in list(y_preds.keys()):
-            y_preds[key] = []
-            y_preds[weights_key] = []
-
         x = f.unsqueeze(0)
         x = x.to(device)
       #  l,p=model(x) #for 3d
@@ -87,26 +81,8 @@ for f in range(tot_fold):
         p = nn.Softmax(dim=1)(l)  #for 2d
 
         pred = p[0][1].detach().cpu()  #.numpy()
-
-        y_preds[key].append(pred)
-        y_preds[weights_key].append(weight)
-        y_preds[true_key] = truth
-    res_preds.append(y_preds)
-
-# Concatenate results of the folds
-y_preds_total = []
-y_labels_total = []
-if mode == 'concat':
-    for r in res_preds:
-        abls = list(r.keys())
-        
-        abls = ['_'.join(k.split("_")[:2]) for k in abls]
-        abls = list(set(abls))
-        for k in abls:
-            y_preds_total.append(r[k][np.argmax(r[f"{k}_weights"])])
-            y_labels_total.append(r[f"{k}_truth"])
-else:
-    raise NotImplementedError
+        y_preds_total.append(pred)
+        y_labels_total.append(truth)
 
 y_labels_total = np.array(y_labels_total)
 y_preds_total = np.array(y_preds_total)
