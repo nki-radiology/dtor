@@ -25,7 +25,7 @@ def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, 
         prelim = classifier_shape(model_dry, sample)
         model = Model(prelim=prelim)
     elif m_name == "resnet+dense":
-        if depth==18:
+        if depth == 18:
             modela = r3d_18(pretrained=True, progress=True)
         else:
             modela = generate_model(depth, n_classes=n_classes)
