@@ -23,7 +23,6 @@ Project Organization
     │                         generated with `pip freeze > requirements.txt`
     |
     ├── results            <- Outputs from training and processing (model pth files, ROCs, AUCs, etc.)
-    ├── runs               <- Tensorboard metrics
     │
     ├── setup.py           <- makes project pip installable (pip install -e .) so src can be imported
     ├── scripts                <- Source code for use in this project.
@@ -109,6 +108,15 @@ class LTPTrainer(TrainerBase):
         train_ds, val_ds = get_data(self.cli_args.datapoints, fold, aug=aug)
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
+    
+    def init_tune(self, trial):
+        self.t_learnRate = trial.suggest_loguniform('learnRate', 1e-6, 1e-3)
+        self.t_decay = trial.suggest_uniform('decay', 0.9, 0.99)
+        self.t_alpha = trial.suggest_uniform('focal_alpha', 0.5, 3.0)
+        self.t_gamma = trial.suggest_uniform('focal_gamma', 0.5, 5.0)
+        self.patience = trial.suggest_int('earlystopping', 3, 6)
+        if self.fix_nlayers:
+            self.fix_nlayers = trial.suggest_int('fix_nlayers', 3, 6)
 
 
 LTPTrainer().main()
