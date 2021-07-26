@@ -1,0 +1,12 @@
+name: build
+on: [push]
+jobs:
+  check-build:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: conda-incubator/setup-miniconda@v2
+        with:
+          auto-activate-base: true
+          activate-environment: ""
+      - run: pip install -r requirements.txt
+      - run: python setup.py install
