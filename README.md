@@ -1,3 +1,5 @@
+[![DOI](https://zenodo.org/badge/341508464.svg)](https://zenodo.org/badge/latestdoi/341508464)
+
 DTOR
 ==============================
 
