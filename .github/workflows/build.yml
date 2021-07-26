@@ -10,4 +10,4 @@ jobs:
           auto-activate-base: true
           activate-environment: ""
       - run: pip install -r requirements.txt
-      - run: python setup.py install
+      - run: python setup.py install --user
