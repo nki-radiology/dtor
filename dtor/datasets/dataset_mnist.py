@@ -13,6 +13,7 @@ from scipy.signal import resample_poly
 
 _factors = [(3, 1), (3, 1), (3, 1)]
 
+
 def array_to_color(array, cmap="Oranges"):
     s_m = plt.cm.ScalarMappable(cmap=cmap)
     return s_m.to_rgba(array)[:, :-1]
