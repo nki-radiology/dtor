@@ -103,7 +103,6 @@ class TrainerBase:
         np.random.seed(seed_value)
         random.seed(seed_value)
 
-
     def init_model(self, sample=None):
         return NotImplementedError
 
