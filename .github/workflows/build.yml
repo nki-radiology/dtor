@@ -1,7 +1,7 @@
-name: build
+name: buildcov
 on: [push]
 jobs:
-  check-build:
+  check-build-cov:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -9,5 +9,11 @@ jobs:
         with:
           auto-activate-base: true
           activate-environment: ""
-      - run: pip install -r requirements.txt
-      - run: python setup.py install --user
+      - name: build
+        run: |
+        pip install -r requirements.txt
+        python setup.py install --user
+      - name: coverage
+        run: |
+        export COVERALLS_REPO_TOKEN=secrets.REPO_TOKEN
+        coveralls --service=github
