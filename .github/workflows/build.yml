@@ -16,4 +16,4 @@ jobs:
       - name: coverage
         run: |
           export COVERALLS_REPO_TOKEN=secrets.REPO_TOKEN
-          coveralls
+          coveralls -v --service=github-actions
