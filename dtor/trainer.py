@@ -9,7 +9,7 @@ import os
 import sys
 import random
 import json
-
+from copy import deepcopy
 import numpy as np
 import pandas as pd
 
@@ -57,6 +57,7 @@ class TrainerBase:
         self.val_dl = None
         self.study = None
         self.sample = None
+        self.init_dict = {}
         self.root_dir = os.environ["DTORROOT"]
 
         parser = init_parser()
@@ -471,6 +472,9 @@ class TrainerBase:
         #if self.fix_nlayers:
         self.model = self.init_model(sample=self.sample)
 
+        # Save the initial state to reproduce the tuning value
+        self.init_dict[trial.number] = deepcopy(self.model.state_dict())
+
         # If model is using cnn_finetune, we need to update the transform with the new
         # mean and std deviation values
         try:
@@ -558,6 +562,12 @@ class TrainerBase:
 
         # Save best params
         print(f"Best config: {self.study.best_params}")
+
+        # Save best initialization
+        model_path = os.path.join(self.output_dir,
+                                      f"model-best_init.pth")
+        torch.save(self.init_dict[self.study.best_trial.number], model_path)
+
         bp_name = os.path.join(self.output_dir, 'best_params.json')
         with open(bp_name, 'w') as f:
             json.dump(self.study.best_params, f, indent=2)
