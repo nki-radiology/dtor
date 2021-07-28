@@ -1,5 +1,6 @@
 [![DOI](https://zenodo.org/badge/341508464.svg)](https://zenodo.org/badge/latestdoi/341508464)
 ![build](https://github.com/Tevien/dtor/actions/workflows/build.yml/badge.svg)
+[![coverage](https://coveralls.io/repos/github/Tevien/dtor/badge.svg?branch=main)](https://coveralls.io/github/Tevien/dtor?branch=main)
 
 DTOR
 ==============================
