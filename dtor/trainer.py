@@ -263,6 +263,10 @@ class TrainerBase:
                                            f"model-{self.cli_args.exp_name}-fold{fold}-epoch{epoch_ndx}.pth")
                     torch.save(checkpoint, ch_path)
 
+                obj, _, _ = roc_and_auc(val_metrics_t[METRICS_PRED_NDX].numpy(),
+                                    val_metrics_t[METRICS_LABEL_NDX].numpy())
+                log.info(f"Status AUC: {obj}")
+
                 if self.cli_args.earlystopping:
                     if es.early_stop:
                         break
