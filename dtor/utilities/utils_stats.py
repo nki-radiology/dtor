@@ -134,7 +134,7 @@ def delong_roc_test(ground_truth, predictions_one, predictions_two):
     return calc_pvalue(aucs, delongcov)
 
 
-def roc_and_auc(y_pred, y_true):
+def roc_and_auc(y_pred, y_true, verbose=False):
     alpha = 0.95
 
     auc, auc_cov = delong_roc_variance(
@@ -151,9 +151,10 @@ def roc_and_auc(y_pred, y_true):
 
     ci[ci > 1] = 1
 
-    print('AUC:', auc)
-    print('AUC COV:', auc_cov)
-    print('95% AUC CI:', ci)
+    if verbose:
+        print('AUC:', auc)
+        print('AUC COV:', auc_cov)
+        print('95% AUC CI:', ci)
 
     return auc, auc_cov, ci
 
