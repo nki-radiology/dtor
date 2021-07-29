@@ -1,7 +1,7 @@
-name: build
+name: cov
 on: [push]
 jobs:
-  check-build:
+  check-cov:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
@@ -13,3 +13,7 @@ jobs:
         run: |
           pip install -r requirements.txt
           python setup.py install --user
+      - name: coveralls
+        uses: AndreMiras/coveralls-python-action@develop
+        with:
+          github-token: secrets.REPO_TOKEN
