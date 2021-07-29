@@ -60,7 +60,7 @@ class TrainerBase:
         self.root_dir = os.environ["DTORROOT"]
 
         # Redirect stdout
-        sys.stdout = log.info
+        sys.stdout = log
 
         parser = init_parser()
         args = parser.parse_args(sys_argv)
