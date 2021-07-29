@@ -20,14 +20,13 @@ for handler in list(root_logger.handlers):
 logfmt_str = "%(asctime)s %(levelname)-8s pid:%(process)d %(name)s:%(lineno)03d:%(funcName)s %(message)s"
 formatter = logging.Formatter(logfmt_str)
 
-streamHandler = logging.StreamHandler()
+streamHandler = logging.StreamHandler(sys.stdout)
 streamHandler.setFormatter(formatter)
 streamHandler.setLevel(logging.DEBUG)
 
 stdoutHandler = logging.StreamHandler(sys.stdout)
 
 root_logger.addHandler(streamHandler)
-root_logger.addHandler(stdoutHandler)
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)
