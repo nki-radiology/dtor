@@ -59,6 +59,9 @@ class TrainerBase:
         self.init_dict = {}
         self.root_dir = os.environ["DTORROOT"]
 
+        # Redirect stdout
+        sys.stdout = log.info
+
         parser = init_parser()
         args = parser.parse_args(sys_argv)
         if args.load_json:
@@ -265,7 +268,7 @@ class TrainerBase:
 
                 obj, _, _ = roc_and_auc(val_metrics_t[METRICS_PRED_NDX].numpy(),
                                     val_metrics_t[METRICS_LABEL_NDX].numpy())
-                log.info(f"Status AUC: {obj}")
+                log.info(f"Status AUC: {obj:.3f}")
 
                 if self.cli_args.earlystopping:
                     if es.early_stop:
@@ -516,7 +519,7 @@ class TrainerBase:
                                     val_metrics_t[METRICS_LABEL_NDX].numpy())
         except ValueError:
             return None
-        log.info(f"Calculated objective: {obj}")
+        log.info(f"Calculated objective: {obj:.3f}")
         return - obj
 
     def tune(self):
