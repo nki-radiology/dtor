@@ -7,6 +7,7 @@ __copyright__ = "MIT"
 import logging.handlers
 import datetime
 import time
+import sys
 
 root_logger = logging.getLogger()
 root_logger.setLevel(logging.INFO)
@@ -23,7 +24,10 @@ streamHandler = logging.StreamHandler()
 streamHandler.setFormatter(formatter)
 streamHandler.setLevel(logging.DEBUG)
 
+stdoutHandler = logging.StreamHandler(sys.stdout)
+
 root_logger.addHandler(streamHandler)
+root_logger.addHandler(stdoutHandler)
 
 log = logging.getLogger(__name__)
 log.setLevel(logging.DEBUG)

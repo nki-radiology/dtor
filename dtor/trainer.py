@@ -59,9 +59,6 @@ class TrainerBase:
         self.init_dict = {}
         self.root_dir = os.environ["DTORROOT"]
 
-        # Redirect stdout
-        sys.stdout = log
-
         parser = init_parser()
         args = parser.parse_args(sys_argv)
         if args.load_json:
