@@ -569,6 +569,9 @@ class TrainerBase:
         for k, v in self.init_dict.items():
             if k != self.study.best_trial.number:
                 os.remove(v)
+            else:
+                model_path = os.path.join(self.output_dir, "model_init_best.pth")
+                os.rename(v, model_path)
 
         bp_name = os.path.join(self.output_dir, 'best_params.json')
         with open(bp_name, 'w') as f:
