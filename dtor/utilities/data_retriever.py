@@ -28,11 +28,11 @@ class ConvertDCHWtoCDHW(nn.Module):
         return vid.permute(1, 0, 2, 3)
 
 
-def get_data(name, csv_loc=None, fold=None, aug=False,
-             mean=None,
+def get_data(name, csv_loc=None, fold=None, aug=False, mean=None,
              std=None,
              dim=3,
-             limit=None):
+             limit=None,
+             external=None):
     """
     Helper function for datasets
     Args:
@@ -42,6 +42,7 @@ def get_data(name, csv_loc=None, fold=None, aug=False,
         aug: do you want to include augmentations
         mean: mean of the channels for transform
         std: std deviation of the channels for the transform
+        external: An external data loader class to be derived in another class
 
     Returns: torch dataset
 
@@ -72,7 +73,14 @@ def get_data(name, csv_loc=None, fold=None, aug=False,
     tr_aug = transforms.Compose(tr_aug)
 
     assert name.lower() in ["mnist3d", "ltp"]
-    if name.lower() == "mnist3d":
+    if external:
+        train_ds = external(csv="data/external/mnist/full_dataset_vectors.h5",
+                                  tr_test="train",
+                                  transform=tr_aug if aug else tr_eval)
+        val_ds = external(csv="data/external/mnist/full_dataset_vectors.h5",
+                                tr_test="test", transform=tr_eval)
+
+    elif name.lower() == "mnist3d":
         train_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5",
                                   tr_test="train",
                                   transform=tr_aug if aug else tr_eval,
