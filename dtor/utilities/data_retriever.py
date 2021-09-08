@@ -72,14 +72,14 @@ def get_data(name, csv_loc=None, fold=None, aug=False, mean=None,
     tr_eval = transforms.Compose(tr_eval)
     tr_aug = transforms.Compose(tr_aug)
 
-    assert name.lower() in ["mnist3d", "ltp"]
+    assert name.lower() in ["mnist3d", "ltp", "external"]
     if external:
-        train_ds = external(csv="data/external/mnist/full_dataset_vectors.h5",
+        train_ds = external(csv=csv_loc,
                             tr_test="train",
                             transform=tr_aug if aug else tr_eval,
                             fold=fold,
                             dim=dim)
-        val_ds = external(csv="data/external/mnist/full_dataset_vectors.h5",
+        val_ds = external(csv=csv_loc,
                           tr_test="test",
                           transform=tr_eval,
                           fold=fold,
