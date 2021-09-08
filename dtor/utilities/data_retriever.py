@@ -75,10 +75,15 @@ def get_data(name, csv_loc=None, fold=None, aug=False, mean=None,
     assert name.lower() in ["mnist3d", "ltp"]
     if external:
         train_ds = external(csv="data/external/mnist/full_dataset_vectors.h5",
-                                  tr_test="train",
-                                  transform=tr_aug if aug else tr_eval)
+                            tr_test="train",
+                            transform=tr_aug if aug else tr_eval,
+                            fold=fold,
+                            dim=dim)
         val_ds = external(csv="data/external/mnist/full_dataset_vectors.h5",
-                                tr_test="test", transform=tr_eval)
+                          tr_test="test",
+                          transform=tr_eval,
+                          fold=fold,
+                          dim=dim)
 
     elif name.lower() == "mnist3d":
         train_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5",
