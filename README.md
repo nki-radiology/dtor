@@ -83,7 +83,9 @@ echo "git+ssh://git@github.com/tevien/dtor.git" >> requirements.txt
 An example of subsequent usage:
 ```python
 from dtor.trainer import TrainerBase
-from WHEREVER_MY_MODIFIED_FUNCIONS_ARE import get_data, model_choice
+from dtor.utilities.data_retriever import get_data
+from dtor.utilities.model_retriever import model_choice
+import MYDATASETCLASS as external
 import torch
 import torch.nn as nn
 import sys
@@ -109,7 +111,7 @@ class LTPTrainer(TrainerBase):
         aug = False
         if self.cli_args.augments > 0:
             aug = True
-        train_ds, val_ds = get_data(self.cli_args.datapoints, fold, aug=aug)
+        train_ds, val_ds = get_data(self.cli_args.datapoints, fold, aug=aug, external=external)
         train_dl, val_dl = self.init_loaders(train_ds, val_ds)
         return train_ds, val_ds, train_dl, val_dl
     
