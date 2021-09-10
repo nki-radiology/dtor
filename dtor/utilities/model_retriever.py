@@ -35,7 +35,7 @@ def model_choice(m_name="nominal", pretrain_loc=None, resume=None, sample=None, 
         shape = classifier_shape(modela, sample)
         model = ModelB(modela, base_output_shape=shape, fix_inmodel=fix_inmodel)
     elif m_name == 'pretrained_2d':
-        model = make_model(pretrained_2d_name, num_classes=2, pretrained=True, input_size=(214, 214),
+        model = make_model(pretrained_2d_name, num_classes=2, pretrained=True, input_size=(sample[0].size()[-1], sample[0].size()[-1]),
                            classifier_factory=make_classifier)
         if fix_inmodel:
             assert isinstance(fix_inmodel, int), "Tell me how many layers to fix"

@@ -172,8 +172,8 @@ class TrainerBase:
 
     def main_training(self):
         # Load chunks file
-        if self.cli_args.dset == "ltp":
-            _df = pd.read_csv(self.cli_args.datapoints, sep="\t")
+        _df = pd.read_csv(self.cli_args.datapoints, sep="\t")
+        if "fold_0" in _df.columns.values:
             tot_folds = find_folds(_df)
             log.info(f'Found a total of {tot_folds} folds to process')
         else:
