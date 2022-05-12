@@ -57,7 +57,7 @@ def bbox3d(img, _min=0, _buffer=0):
     _cm = img.shape[1]-_buffer-1
     _zm = img.shape[2]-_buffer-1
     
-    return max(rmin, _buffer+1)-_buffer, min(rmax, _rm)+_buffer, max(cmin, _buffer+1)-_buffer, min(cmax, _cm)+_buffer, max(zmin, _buffer+1)-_buffer, max(zmax, _zm)+_buffer
+    return max(rmin, _buffer+1)-_buffer, min(rmax, _rm)+_buffer, max(cmin, _buffer+1)-_buffer, min(cmax, _cm)+_buffer, max(zmin, _buffer+1)-_buffer, min(zmax, _zm)+_buffer
 
 
 def crop3d(in3d, box):
@@ -256,15 +256,20 @@ def set_plt_config():
     pylab.rcParams.update(params)
 
 
-def get_class_distribution_loaders(dataloader_obj, labels):
+def get_class_distribution_loaders(dataloader_obj, labels, extra=False):
     count_dict = {k: 0 for k in labels}
-    for _, j, _ in dataloader_obj:
-        y_idx = j.item()
-        count_dict[str(y_idx)] += 1
+    if not extra:
+        for _, j, _ in dataloader_obj:
+            y_idx = j.item()
+            count_dict[str(y_idx)] += 1
+    else:
+        for _, j, _, _ in dataloader_obj:
+            y_idx = j.item()
+            count_dict[str(y_idx)] += 1
     return count_dict
 
 
-def get_class_weights(dset, sample_frac=0.2, labels=['0', '1']):
+def get_class_weights(dset, sample_frac=0.2, labels=['0', '1'], extra=False):
     """
 
     Args:
@@ -283,7 +288,7 @@ def get_class_weights(dset, sample_frac=0.2, labels=['0', '1']):
     sampler = torch.utils.data.SubsetRandomSampler(idx)
     loader = torch.utils.data.DataLoader(dataset=dset, shuffle=False, batch_size=1, sampler=sampler)
 
-    c_dict = get_class_distribution_loaders(loader, labels)
+    c_dict = get_class_distribution_loaders(loader, labels, extra)
     f_dict = dict()
     for k, c in c_dict.items():
         f_dict[k] = c/len(idx)

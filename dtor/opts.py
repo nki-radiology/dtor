@@ -161,4 +161,10 @@ def init_parser():
                         nargs='?',
                         default=700,
                         )
+    parser.add_argument('--n_clinical',
+                        help="How many clinical variables are being concatenated",
+                        type=list,
+                        nargs='?',
+                        default=[],
+                        )
     return parser

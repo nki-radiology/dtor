@@ -32,7 +32,8 @@ def get_data(name, csv_loc=None, fold=None, aug=False, mean=None,
              std=None,
              dim=3,
              limit=None,
-             external=None):
+             external=None,
+             external_kwargs=None):
     """
     Helper function for datasets
     Args:
@@ -78,12 +79,14 @@ def get_data(name, csv_loc=None, fold=None, aug=False, mean=None,
                             tr_test="train",
                             transform=tr_aug if aug else tr_eval,
                             fold=fold,
-                            dim=dim)
+                            dim=dim,
+                            **external_kwargs)
         val_ds = external(csv=csv_loc,
                           tr_test="test",
                           transform=tr_eval,
                           fold=fold,
-                          dim=dim)
+                          dim=dim,
+                          **external_kwargs)
 
     elif name.lower() == "mnist3d":
         train_ds = MNIST3DDataset(h5_file="data/external/mnist/full_dataset_vectors.h5",

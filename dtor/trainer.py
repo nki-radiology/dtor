@@ -56,6 +56,7 @@ class TrainerBase:
         self.val_dl = None
         self.study = None
         self.sample = None
+        self.fold = None
         self.init_dict = {}
         self.root_dir = os.environ["DTORROOT"]
 
@@ -183,6 +184,7 @@ class TrainerBase:
             # Print
             log.info(f'FOLD {fold}')
             log.info('--------------------------------')
+            self.fold = fold
 
             # Data
             mean, std = norms[self.cli_args.norm]
@@ -199,7 +201,10 @@ class TrainerBase:
 
             # Generate weights
             log.info('Calculating class weights')
-            self.weights = get_class_weights(train_ds)
+            if self.cli_args.n_clinical:
+                self.weights = get_class_weights(train_ds, extra=True)
+            else:
+                self.weights = get_class_weights(train_ds)
             self.weights = self.weights.to(self.device)
 
             # Model
@@ -346,14 +351,21 @@ class TrainerBase:
         return val_metrics_g.to('cpu')
 
     def compute_batch_loss(self, batch_ndx, batch_tup, batch_size, metrics_g, debug=False):
-        input_t, label_t, _ = batch_tup
+        if self.cli_args.n_clinical:
+            input_t, label_t, _, extra = batch_tup
+            extra = extra.to(self.device, non_blocking=True)
+        else:
+            input_t, label_t, _ = batch_tup
 
         input_g = input_t.to(self.device, non_blocking=True)
         label_g = label_t.to(self.device, non_blocking=True)
 
         input_g = input_g.float()
         if self.cli_args.dim == 2:
-            logits_g = self.model(input_g)
+            if self.cli_args.n_clinical:
+                logits_g = self.model(input_g, extra)
+            else:
+                logits_g = self.model(input_g)
             probability_g = nn.Softmax(dim=1)(logits_g)
         else:
             logits_g, probability_g = self.model(input_g)
