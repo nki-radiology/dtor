@@ -167,4 +167,10 @@ def init_parser():
                         nargs='?',
                         default=[],
                         )
+    parser.add_argument('--n_inter',
+                        help="How big is the intermediate layer",
+                        type=int,
+                        nargs='?',
+                        default=200,
+                        )
     return parser
